@@ -127,8 +127,11 @@ function invite() {
 </template>
 
 <style scoped>
-.prize { background: #35a2ff; padding-top: 15px; position: relative; min-height: 100vh; }
-.prize .prize_bg { width: 100vw; background: #ffac41; }
+/* The absolutely-positioned stack bottoms out at ~1005px (prize_main top:745 + 260).
+   Floor the height so the blue background spans the whole scrollable page. */
+.prize { background: #35a2ff; padding-top: 15px; position: relative; min-height: max(100vh, 1010px); overflow: hidden; }
+/* Frame-relative, not 100vw: 100vw resolves to the full viewport (390px) and overflows/clips the 375 frame. */
+.prize .prize_bg { width: 100%; background: #ffac41; }
 .prize .prize_bg img { width: 100%; }
 .prize .prize_people { width: 236px; height: 28px; background: rgba(0,0,0,.2); border-radius: 100px; position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 14px; font-family: Roboto, Roboto-Regular; font-weight: 400; text-align: center; color: #fff; line-height: 28px; letter-spacing: 0px; }
 .prize .prize_amount { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; position: absolute; top: 318px; }
@@ -160,7 +163,8 @@ function invite() {
 .prize .prize_main .prize_main_users .prize_main_users_item .prize_main_users_item_right .top .time { font-size: 12px; font-family: Roboto, Roboto-Regular; font-weight: 400; color: #ee5016; }
 .prize .prize_main .prize_main_users .prize_main_users_item .prize_main_users_item_right .bottom { margin-top: 3px; font-size: 11px; font-family: Roboto, Roboto-Regular; font-weight: 400; color: #17273a; }
 
-.mask { position: fixed; left: 0; top: 0; z-index: 99999; display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100vw; height: 100vh; background: rgba(0,0,0,.6); }
+/* Center the mask within the 375 frame (not the full viewport). */
+.mask { position: fixed; left: 50%; top: 0; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; max-width: var(--maxw); height: 100vh; background: rgba(0,0,0,.6); }
 .mask .m-modal { z-index: 100000; width: 338px; height: 524px; margin-top: -10%; }
 .mask .m-modal-success { background: url('/static/image/record/img_YouWon.png'); background-size: 100% 100%; position: relative; }
 .mask .p-btn { display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; margin-top: 125px; }
