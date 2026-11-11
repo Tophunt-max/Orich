@@ -14,11 +14,7 @@ const amount = ref(0);
 const custom = ref('');
 const busy = ref(false);
 
-onMounted(async () => {
-  options.value = (await api.rechargeOptions()).options;
-  await auth.refresh();
-});
-
+onMounted(async () => { options.value = (await api.rechargeOptions()).options; await auth.refresh(); });
 function pick(v) { amount.value = v; custom.value = ''; }
 
 async function pay() {
@@ -35,36 +31,38 @@ async function pay() {
 }
 </script>
 
+<!-- Faithful rebuild of the real pages/payment/recharge (.comfirm) + scoped CSS. -->
 <template>
-  <div class="page">
+  <div class="comfirm">
     <NavBar :title="t('recharge.title')" />
-    <div class="bal card">
-      <span class="muted">{{ t('common.balance') }}</span>
-      <span class="price big">₹{{ auth.user?.balance ?? '0.00' }}</span>
+    <div class="balance">{{ t('common.balance') }}: <b>₹{{ auth.user?.balance ?? '0.00' }}</b></div>
+
+    <div class="comfirm-title"><span class="comfirm-op"></span>{{ t('recharge.choose') }}</div>
+    <div class="comfirm_pay">
+      <div v-for="o in options" :key="o" class="comfirm_pay_item" :class="{ active: amount === o && !custom }" @click="pick(o)">₹{{ o }}</div>
     </div>
 
-    <div class="section-title">{{ t('recharge.choose') }}</div>
-    <div class="grid">
-      <button v-for="o in options" :key="o" class="opt card" :class="{ on: amount === o && !custom }" @click="pick(o)">
-        <span class="price">₹{{ o }}</span>
-      </button>
-    </div>
+    <div class="comfirm-title"><span class="comfirm-op"></span>{{ t('recharge.custom') }}</div>
+    <div class="custom-wrap"><input class="custom-input" v-model="custom" type="number" min="1" placeholder="₹" @focus="amount = 0" /></div>
 
-    <div class="section-title">{{ t('recharge.custom') }}</div>
-    <div style="padding:0 12px">
-      <input class="field" v-model="custom" type="number" min="1" placeholder="₹" @focus="amount = 0" />
-    </div>
-
-    <div style="padding:20px 12px">
-      <button class="btn" :disabled="busy" @click="pay">{{ t('recharge.pay') }}</button>
+    <div class="btn">
+      <button class="btn-buy" :disabled="busy" @click="pay">{{ t('recharge.pay') }}</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.bal { margin: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.price.big { font-size: 26px; }
-.grid { padding: 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.opt { padding: 18px 0; text-align: center; border: 2px solid transparent; }
-.opt.on { border-color: var(--brand); }
+.comfirm { position: relative; background: #fff; min-height: 100vh; padding-bottom: 80px; }
+.balance { padding: 12px 15px 0; font-size: 13px; color: #17273a; }
+.balance b { color: #ee5016; }
+.comfirm-title { display: flex; align-items: center; margin: 15px; font-size: 16px; font-weight: 700; color: #17273a; }
+.comfirm-op { width: 5px; height: 10px; margin-right: 5px; background: #ee5016; }
+.comfirm_pay { display: flex; flex-wrap: wrap; padding: 0 15px; gap: 16px; }
+.comfirm_pay_item { width: 104px; height: 39px; line-height: 39px; text-align: center; border: 0.5px solid hsla(0,0%,72.5%,.6); border-radius: 4.5px; color: #17273a; font-weight: 600; }
+.comfirm_pay_item.active { background: #ee5016; border-color: #ee5016; color: #fff; }
+.custom-wrap { padding: 0 15px; }
+.custom-input { width: 100%; padding: 11px 14px; border: 1px solid #ececec; border-radius: 8px; font-size: 15px; outline: none; }
+.btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: var(--maxw); padding: 10px 15px; background: #fff; border-top: 1px solid #f0f0f0; }
+.btn-buy { width: 100%; height: 49px; border-radius: 25px; background: #ee5016; color: #fff; font-size: 16px; font-weight: 700; }
+.btn-buy:disabled { opacity: 0.6; }
 </style>
