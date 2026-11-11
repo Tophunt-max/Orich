@@ -18,6 +18,7 @@ const participants = ref([]);
 const prizeTiers = ref([]);
 const winners = ref([]);
 const reviews = ref([]);
+const history = ref([]);
 const peopleAvatars = ref([]);
 const shares = ref(1);
 const busy = ref(false);
@@ -41,7 +42,20 @@ onMounted(async () => {
     const jl = await api.joinList(route.params.id);
     if (jl?.list?.length) participants.value = jl.list;
   } catch { /* keep embedded fallback */ }
+  // Past rounds / winners for this product (duobaoitemhistory).
+  try {
+    const h = await api.itemHistory(route.params.id);
+    history.value = h?.list || [];
+  } catch { /* leave empty */ }
 });
+
+// Mask a winner's display name, e.g. "Rahul" -> "R***l".
+function maskName(name) {
+  const s = String(name || '').trim();
+  if (!s) return 'Anonymous';
+  if (s.length <= 2) return s[0] + '*';
+  return s[0] + '***' + s[s.length - 1];
+}
 
 async function join() {
   if (!auth.isLoggedIn) return router.push({ path: '/login', query: { redirect: route.fullPath } });
@@ -189,6 +203,26 @@ const inr = (n) => '₹' + Number(n).toLocaleString('en-IN');
           </div>
         </div>
         <div v-if="!winners.length" class="empty">No winners yet</div>
+
+        <!-- past rounds (duobaoitemhistory) -->
+        <div class="history">
+          <div class="history-head">Past rounds</div>
+          <div v-for="(h, i) in history" :key="i" class="hist-item">
+            <img class="hist-avatar" :src="h.avatar || '/static/image/networkimg/user.png'" alt="" />
+            <div class="hist-detail">
+              <div class="hist-top">
+                <div class="hist-name">{{ maskName(h.name) }}</div>
+                <div class="hist-date">{{ h.date }}</div>
+              </div>
+              <div class="hist-product">{{ h.product }}</div>
+              <div class="hist-meta">
+                <span v-if="h.code">Code {{ h.code }}</span>
+                <span v-if="h.shares != null">{{ h.shares }} share(s)</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="!history.length" class="empty">No past rounds yet</div>
+        </div>
       </div>
 
       <!-- reviews list -->
@@ -324,6 +358,19 @@ const inr = (n) => '₹' + Number(n).toLocaleString('en-IN');
 .winner .item .detail .name { font-size: 14px; }
 .winner .item .detail .title { margin: 7px 0; font-size: 14px; font-weight: 700; color: #000; }
 .winner .item .detail .text { font-size: 13px; color: #b9b9b9; }
+
+/* past rounds */
+.history { margin-top: 10px; border-top: 4px solid #f9f9f9; padding-top: 10px; }
+.history .history-head { font-size: 14px; font-weight: 700; color: #17273a; margin-bottom: 4px; }
+.history .hist-item { display: flex; align-items: flex-start; padding: 10px 0; }
+.history .hist-item:not(:last-child) { border-bottom: .5px solid #ececec; }
+.history .hist-avatar { width: 36px; height: 36px; border-radius: 50%; margin-right: 12px; object-fit: cover; border: 1px solid #fff; }
+.history .hist-detail { flex: 1; }
+.history .hist-top { display: flex; align-items: center; justify-content: space-between; }
+.history .hist-name { font-size: 14px; font-weight: 700; color: #17273a; }
+.history .hist-date { font-size: 12px; color: #b9b9b9; }
+.history .hist-product { margin-top: 3px; font-size: 13px; color: #17273a; }
+.history .hist-meta { margin-top: 3px; font-size: 12px; color: #b9b9b9; display: flex; gap: 12px; }
 
 /* reviews */
 .reviews { width: 100%; padding: 0 12px; }

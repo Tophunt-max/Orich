@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
@@ -9,6 +10,14 @@ import { useToast } from '../components/useToast';
 const router = useRouter();
 const auth = useAuth();
 const { toast } = useToast();
+const { locale } = useI18n();
+
+const langLabel = computed(() => (locale.value === 'hi' ? 'हिंदी' : 'English'));
+function toggleLang() {
+  locale.value = locale.value === 'en' ? 'hi' : 'en';
+  localStorage.setItem('orich_lang', locale.value);
+  toast(locale.value === 'hi' ? 'भाषा: हिंदी' : 'Language: English');
+}
 
 const arrow = '/static/image/icon_CaretRight.png';
 const version = '2.1.4';
@@ -61,6 +70,11 @@ async function signOut() {
       <div class="user" @click="clearCache">
         <span class="user_updates">Clear Cache</span>
         <span class="name_info" style="float:right;margin-right:30px">{{ cache }}</span>
+      </div>
+
+      <div class="user" @click="toggleLang">
+        <span class="user_updates">Language</span>
+        <span class="name_info" style="float:right;margin-right:30px">{{ langLabel }}</span>
       </div>
 
       <div class="check">
