@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
 
 const router = useRouter();
@@ -26,7 +27,19 @@ const menu = [
   { icon: img + 'icon_Customerservice.png', label: 'account.service', to: '/service' },
 ];
 
-onMounted(async () => { user.value = await auth.refresh(); });
+// Finance assets summary. The backend exposes no per-user finance totals yet, so these
+// are derived from the wallet balance / static placeholders — wire real data later.
+const financeTotal = ref('0.00');
+const financeEarn = ref('0.00');
+
+onMounted(async () => {
+  user.value = await auth.refresh();
+  try {
+    const d = await api.myFinance();
+    const list = d.list || [];
+    financeTotal.value = list.reduce((a, o) => a + Number(o.amount || 0), 0).toFixed(2);
+  } catch { /* not logged in or none */ }
+});
 
 function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
 </script>
@@ -43,6 +56,21 @@ function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
         </div>
       </div>
       <img class="mine_setting" :src="img + 'icon_setup.png'" alt="" @click="router.push('/setting')" />
+
+      <div class="mine_user_member" @click="router.push('/vip')">
+        <div class="mine_user_member_title">
+          <div class="icon"><img src="/static/image/member/icon_vip.png" alt="" /></div>
+          <div class="name">{{ user?.vip ? user.vip.name + ' Member' : 'ORich VIP Club' }}</div>
+        </div>
+        <div class="mine_user_member_item">
+          <div class="benefits">Benefits</div>
+          <img class="coin" src="/static/image/member/icon_goldcoins.png" alt="" />
+          <div class="enjoy1">Daily bonus</div>
+          <img class="redpacket" src="/static/image/member/icon_redenvelope.png" alt="" />
+          <div class="enjoy2">Extra rebate</div>
+          <img class="tovip" src="/static/image/account/icon_leftarrow.png" alt="" style="transform:rotate(180deg)" />
+        </div>
+      </div>
     </div>
 
     <div class="mine_main">
@@ -70,6 +98,23 @@ function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
       <div class="mine_wallet_tip">{{ t('account.frozen') }}: ₹{{ user?.frozen ?? '0.00' }}</div>
     </div>
 
+    <div class="mine_finance" :style="{ backgroundImage: `url(${img}bg_finance.png)` }" @click="router.push('/finance')">
+      <div class="mine_finance_bar">
+        <div class="mine_finance_bar_title">My Finance</div>
+        <div class="mine_finance_bar_icon"><img :src="img + 'icon_leftarrow.png'" alt="" style="transform:rotate(180deg)" /></div>
+      </div>
+      <div class="mine_finance_total">
+        <div class="mine_finance_total_item">
+          <div class="number">₹{{ financeTotal }}</div>
+          <div class="tip">Total invested</div>
+        </div>
+        <div class="mine_finance_total_item">
+          <div class="number">₹{{ financeEarn }}<span class="number_add">+</span></div>
+          <div class="tip">Total earnings</div>
+        </div>
+      </div>
+    </div>
+
     <div class="mine_menulist">
       <div v-for="(m, i) in menu" :key="m.label + i" class="mine_menulist_item" :class="{ mar_top: i > 0 }" @click="router.push(m.to)">
         <div class="mine_menulist_item_left">
@@ -90,8 +135,22 @@ function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
 <style scoped>
 .mine { width: 100%; min-height: 100vh; background: #f9f9f9; padding-bottom: 59px; }
 .mine .img { width: 100%; height: 100%; object-fit: cover; }
-.mine_user { height: 200px; background-size: 100% 100%; background-repeat: no-repeat; padding-top: 46px; }
+.mine_user { position: relative; height: 284px; background-size: 100% 100%; background-repeat: no-repeat; padding-top: 60px; }
 .mine_user_main { display: flex; }
+
+/* VIP member banner inside the user header */
+.mine_user_member { margin: 18px 8px 0 8px; min-height: 80px; background: linear-gradient(90deg, #3a2b1d, #6b4d2a); border-radius: 10px; padding-bottom: 10px; }
+.mine_user_member_title { display: flex; align-items: center; height: 26px; padding: 12px 0 0 20px; }
+.mine_user_member_title .icon { width: 22px; height: 19px; }
+.mine_user_member_title .icon img { width: 100%; height: 100%; object-fit: contain; }
+.mine_user_member_title .name { font-size: 16px; font-weight: 700; color: #ffe0ad; margin-left: 10px; }
+.mine_user_member_item { display: flex; align-items: center; padding: 8px 9px 0 12px; }
+.mine_user_member_item .benefits { font-size: 16px; font-weight: 500; color: #ffd9a8; flex-shrink: 0; }
+.mine_user_member_item .coin { width: 24px; height: 24px; margin-left: 15px; flex-shrink: 0; object-fit: contain; }
+.mine_user_member_item .enjoy1 { width: 69px; font-size: 13px; color: #ffd9a8; margin-left: 7px; flex-shrink: 0; }
+.mine_user_member_item .redpacket { width: 32px; height: 32px; flex-shrink: 0; margin-left: 2px; object-fit: contain; }
+.mine_user_member_item .enjoy2 { width: 62px; font-size: 13px; color: #ffd9a8; flex-shrink: 0; }
+.mine_user_member_item .tovip { width: 8px; height: 14px; flex-shrink: 0; margin-left: 8px; opacity: .8; }
 .mine_user_img { width: 60px; height: 60px; border-radius: 50%; overflow: hidden; margin-left: 16px; border: 2px solid #fff; }
 .mine_user_info { margin-top: 7px; margin-left: 17px; }
 .mine_user_info_name { font-size: 16px; font-weight: 700; line-height: 18px; color: #fff; }
@@ -116,6 +175,17 @@ function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
 .mine_wallet_main_btnrecharge { padding: 0 14px; height: 35px; display: flex; align-items: center; justify-content: center; background: linear-gradient(115deg, #ffe44b, #fea326); border-radius: 4px; box-shadow: 0 -2px 4px 0 rgba(255,125,0,.5) inset; font-size: 13px; color: #ad6701; font-weight: 600; }
 .mine_wallet_main_btndraw { padding: 0 14px; height: 35px; margin-left: 8px; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ee5016; border-radius: 4px; font-size: 13px; color: #ee5016; font-weight: 600; }
 .mine_wallet_tip { margin-top: 6px; margin-left: 24px; font-weight: 400; color: #a6a5a5; line-height: 18px; font-size: 13px; }
+
+.mine_finance { margin: 12px 6px 12px 8px; height: 113px; background-size: 100% 100%; background-repeat: no-repeat; border-radius: 8px; }
+.mine_finance_bar { display: flex; justify-content: space-between; padding: 15px 12px 0 14px; }
+.mine_finance_bar_title { font-size: 16px; font-weight: 600; color: #17273a; }
+.mine_finance_bar_icon { width: 12px; height: 12px; }
+.mine_finance_bar_icon img { width: 100%; height: 100%; opacity: .5; }
+.mine_finance_total { margin-top: 21px; padding: 0 10px 0 7px; display: flex; justify-content: space-between; }
+.mine_finance_total_item { text-align: center; font-weight: 400; }
+.mine_finance_total_item .number { font-size: 20px; font-weight: 700; color: #ff5c5c; max-width: 140px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin: 0 auto; }
+.mine_finance_total_item .number .number_add { margin-left: 3px; font-size: 12px; }
+.mine_finance_total_item .tip { margin-top: 6px; font-size: 13px; color: #b9b9b9; }
 
 .mine_menulist { background: #fff; margin: 12px 8px; border-radius: 8px; padding: 12px 12px 14px 14px; }
 .mine_menulist_item { display: flex; justify-content: space-between; align-items: center; }

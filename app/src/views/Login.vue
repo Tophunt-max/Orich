@@ -50,6 +50,7 @@ async function submit() {
 
     <div class="input-title">{{ t('login.phone') }}</div>
     <div class="inputview">
+      <img class="inputview-flag" src="/static/image/login/icon_iphone.png" alt="" />
       <span class="inputview-num">+91</span>
       <span class="inputview-op"></span>
       <input class="inputview-input" v-model="phone" type="tel" inputmode="numeric" :placeholder="t('login.phonePh')" />
@@ -81,6 +82,7 @@ async function submit() {
 .login .tips { padding: 0 10px; font-size: 18px; font-family: Roboto, Roboto-Regular; font-weight: 400; text-align: left; color: #b9b9b9; }
 .login .input-title { padding: 0 10px; margin-top: 52px; margin-bottom: 8px; font-size: 16px; font-family: Roboto, Roboto-Regular; font-weight: 400; text-align: left; color: #17273a; }
 .login .inputview { display: flex; flex-direction: row; align-items: center; justify-content: center; padding: 10px 0; margin: 0 10px; border-bottom: 1px solid #ececec; }
+.login .inputview .inputview-flag { width: 20px; margin-right: 5px; margin-left: -2px; object-fit: contain; }
 .login .inputview .inputview-num { font-size: 16px; font-family: 'PingFang SC', 'PingFang SC-Medium'; text-align: left; color: #17273a; }
 .login .inputview .inputview-op { width: 1px; height: 13px; margin: 0 8px; background-color: #b9b9b9; }
 .login .inputview .inputview-input { flex: 1; padding-left: 2px; font-size: 16px; font-family: 'PingFang SC', 'PingFang SC-Regular'; font-weight: 400; text-align: left; color: #17273a; border: none; outline: none; background: transparent; }

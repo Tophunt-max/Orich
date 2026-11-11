@@ -6,6 +6,8 @@ import { useToast } from '../components/useToast';
 
 const { toast } = useToast();
 const list = ref([]);
+const tab = ref(0);
+const tabs = ['Winning records', 'My participation'];
 
 onMounted(async () => {
   try { list.value = (await api.myWinners()).list || []; }
@@ -17,6 +19,13 @@ onMounted(async () => {
 <template>
   <div class="winner">
     <NavBar title="My Shares" />
+
+    <div class="share_bar">
+      <div v-for="(tb, i) in tabs" :key="tb" class="share_bar_item" @click="tab = i">
+        <div class="share_bar_item_title" :class="{ active: tab === i }">{{ tb }}</div>
+        <img v-if="tab === i" src="/static/image/home/Vector.png" alt="" />
+      </div>
+    </div>
 
     <div v-if="!list.length" class="empty2">
       <img src="/static/image/nodata.png" alt="" />
@@ -49,6 +58,13 @@ onMounted(async () => {
 <style scoped>
 .winner { background: #f9f9f9; min-height: 100vh; }
 .img { width: 100%; }
+.share_bar { background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 9px 33px 7px 34px; }
+.share_bar_item { display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+.share_bar_item_title { font-size: 14px; font-family: Roboto, Roboto-Medium; font-weight: 700; color: #b9b9b9; }
+.share_bar_item_title.active { font-size: 16px; color: #17273a; }
+.share_bar_item img { width: 17px; height: 6px; margin-top: 3px; }
+.empty2 { text-align: center; color: #b9b9b9; padding: 60px 0; }
+.empty2 img { width: 90px; margin: 0 auto 10px; opacity: 0.8; }
 .card_list { border-radius: 8px; }
 .card_list .card_list_item { position: relative; margin: 10px 14px 8px 15px; padding: 15px 0 15px 11px; background-color: #fff; border-radius: 8px; }
 .card_list .card_list_item .card_list_comment { position: absolute; bottom: 15px; right: 15px; }

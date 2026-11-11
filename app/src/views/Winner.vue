@@ -34,6 +34,9 @@ onMounted(async () => {
         </div>
         <div class="title">🎉 {{ t('winner.congrats') }}</div>
         <div class="content">{{ t('winner.code') }}: {{ w.code }} · {{ w.shares }} {{ t('winner.shares') }}</div>
+        <div v-if="w.images && w.images.length" class="imgArr">
+          <img v-for="(im, k) in w.images" :key="k" :src="im" alt="" />
+        </div>
         <div class="goods">
           <img :src="w.avatar" alt="" />
           <div class="goods-desc">
@@ -63,6 +66,8 @@ onMounted(async () => {
 .main .header .header-time { font-size: 13px; font-family: Roboto, Roboto-Regular; color: #b9b9b9; }
 .main .title { margin-top: 15px; font-size: 16px; font-family: Roboto, Roboto-Medium; font-weight: 700; color: #17273a; }
 .main .content { margin-top: 10px; margin-bottom: 10px; font-size: 14px; font-family: Roboto, Roboto-Regular; color: #686868; }
+.main .imgArr { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; margin: 8px 0; }
+.main .imgArr img { width: 44px; height: 44px; margin-top: 5px; border-radius: 4px; margin-right: 8px; object-fit: cover; }
 .main .goods { display: flex; flex-direction: row; align-items: center; justify-content: center; }
 .main .goods img { width: 58px; height: 58px; margin-right: 7px; border-radius: 8px; object-fit: cover; }
 .main .goods .goods-desc { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; flex: 1; height: 67px; padding: 12px 16px 13px 16px; background: #f7f8f9; border-radius: 12px; }
