@@ -12,11 +12,14 @@ const auth = useAuth();
 const { toast } = useToast();
 const { locale } = useI18n();
 
-const langLabel = computed(() => (locale.value === 'hi' ? 'हिंदी' : 'English'));
+const LANGS = [['en', 'English'], ['hi', 'हिंदी'], ['zh', '中文']];
+const langLabel = computed(() => (LANGS.find((l) => l[0] === locale.value) || LANGS[0])[1]);
 function toggleLang() {
-  locale.value = locale.value === 'en' ? 'hi' : 'en';
-  localStorage.setItem('orich_lang', locale.value);
-  toast(locale.value === 'hi' ? 'भाषा: हिंदी' : 'Language: English');
+  const i = LANGS.findIndex((l) => l[0] === locale.value);
+  const next = LANGS[(i + 1) % LANGS.length];
+  locale.value = next[0];
+  localStorage.setItem('orich_lang', next[0]);
+  toast('Language: ' + next[1]);
 }
 
 const arrow = '/static/image/icon_CaretRight.png';

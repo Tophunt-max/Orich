@@ -5,11 +5,18 @@ import { useRouter } from 'vue-router';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 
-const { t } = useI18n();
+// Local scope adds the search key; global keys (order.*, common.*, product.*)
+// still resolve via vue-i18n's fallback to the root scope.
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: { searchPh: 'Search by product, order ID or status' },
+  hi: { searchPh: 'प्रोडक्ट, ऑर्डर ID या स्थिति से खोजें' },
+  zh: { searchPh: '按商品、订单号或状态搜索' },
+} });
 const router = useRouter();
 const list = ref([]);
 const loading = ref(true);
 const activeTab = ref('all');
+const query = ref('');
 
 onMounted(async () => {
   try { list.value = (await api.orders()).list; } finally { loading.value = false; }
@@ -21,9 +28,21 @@ const tabs = computed(() => {
   for (const o of list.value) if (o.status && !seen.includes(o.status)) seen.push(o.status);
   return ['all', ...seen];
 });
-const filtered = computed(() =>
-  activeTab.value === 'all' ? list.value : list.value.filter((o) => o.status === activeTab.value)
-);
+const filtered = computed(() => {
+  let rows = activeTab.value === 'all'
+    ? list.value
+    : list.value.filter((o) => o.status === activeTab.value);
+  const q = query.value.trim().toLowerCase();
+  if (q) {
+    rows = rows.filter((o) => {
+      const name = (o.product || o.type || '').toString().toLowerCase();
+      const id = (o.id != null ? String(o.id) : '').toLowerCase();
+      const status = (o.status || '').toString().toLowerCase();
+      return name.includes(q) || id.includes(q) || status.includes(q);
+    });
+  }
+  return rows;
+});
 
 function statusClass(s) {
   return { ongoing: 's_wait', success: 's_green', active: 's_num', rewarded: 's_green', entered: 's_num' }[s] || 's_num';
@@ -35,6 +54,11 @@ function statusClass(s) {
 <template>
   <div class="record">
     <NavBar :title="t('order.title')" />
+
+    <!-- search -->
+    <div v-if="!loading && list.length" class="record_search">
+      <input v-model="query" class="record_search_input" type="search" :placeholder="t('searchPh')" />
+    </div>
 
     <!-- status tabs -->
     <div v-if="!loading && list.length" class="record_tabs">
@@ -85,6 +109,11 @@ function statusClass(s) {
 .record_loading { padding-top: 10px; text-align: center; background: #f9f9f9; color: #b9b9b9; }
 .record_main { background: #f9f9f9; }
 .record_main_card { background: #f9f9f9; padding: 8px 15px; }
+
+/* search */
+.record_search { background: #fff; padding: 10px 15px; border-bottom: 1px solid #f0f0f0; }
+.record_search_input { width: 100%; box-sizing: border-box; height: 38px; padding: 0 14px; border: none; outline: none; background: #f4f4f4; border-radius: 19px; font-size: 14px; color: #17273a; }
+.record_search_input::placeholder { color: #b9b9b9; }
 
 /* status tabs (derived) */
 .record_tabs { display: flex; align-items: center; background: #fff; padding: 0 6px; overflow-x: auto; border-bottom: 1px solid #f0f0f0; }

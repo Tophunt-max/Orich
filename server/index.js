@@ -11,8 +11,30 @@
  *   node server/index.js   -> http://localhost:8788
  */
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const store = require('./store');
 const seed = require('./db');
+
+// Static roots for the built SPA + admin (used in production / Docker).
+const APP_DIR = path.join(__dirname, '..', 'app', 'dist');
+const ADMIN_DIR = path.join(__dirname, '..', 'admin', 'dist');
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.ttf': 'font/ttf', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
+function serveStatic(res, root, urlPath) {
+  let rel = decodeURIComponent(urlPath.split('?')[0]);
+  if (rel.endsWith('/')) rel += 'index.html';
+  let file = path.join(root, rel);
+  if (!file.startsWith(root)) return false;            // path traversal guard
+  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+    const idx = path.join(root, 'index.html');          // SPA fallback
+    if (!fs.existsSync(idx)) return false;
+    file = idx;
+  }
+  const body = fs.readFileSync(file);
+  res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Content-Length': body.length });
+  res.end(body);
+  return true;
+}
 
 const PORT = Number(process.env.PORT || 8788);
 const sessions = Object.create(null);      // user token -> userId
@@ -123,13 +145,14 @@ const userRoutes = {
   '/index/financeDetail': (b) => { const f = store.get().finances.find((x) => x.id === Number(b.id)); return f ? ok({ item: f, participants: financeParticipants(f.id), rules: seed.inviteRules }) : err('Plan not found'); },
   '/index/rechargelist': () => ok({ options: store.get().rechargeOptions, channels: seed.payChannels }),
   '/index/systemservice': () => ok({ whatsapp: store.get().settings.service, email: 'support@orich.example' }),
-  '/index/help': () => ok({ list: store.get().helpItems || seed.helpItems }),
+  '/index/help': (b, ctx) => ok({ list: localizeHelp(store.get().helpItems || seed.helpItems, ctx && ctx.lang) }),
 
   '/index/sendverify': (b) => {
     if (!/^\d{6,15}$/.test(String(b.phone || ''))) return err('Enter a valid phone number');
     const code = String(Math.floor(1000 + Math.random() * 8999));
     otps[b.phone] = code;
-    return ok({ sent: true, demoCode: code }, 'Verification code sent');
+    // demoCode is exposed only in demo mode (default). Set ORICH_HIDE_OTP=1 in production.
+    return ok({ sent: true, ...(process.env.ORICH_HIDE_OTP === '1' ? {} : { demoCode: code }) }, 'Verification code sent');
   },
   '/index/login': (b) => {
     const phone = String(b.phone || ''); const code = String(b.code || '');
@@ -287,8 +310,8 @@ const userRoutes = {
   '/index/financeDetailHistory': (b) => ok({ list: financeHistory(Number(b.id)) }),
 
   // ---------- APK parity: answers / after-sales / misc ----------
-  '/index/getanswer': () => ok({ list: store.get().helpItems || seed.helpItems }),
-  '/index/runoobdetail': () => ok({ title: 'Rules', content: seed.inviteRules.join('\n') }),
+  '/index/getanswer': (b, ctx) => ok({ list: localizeHelp(store.get().helpItems || seed.helpItems, ctx && ctx.lang) }),
+  '/index/runoobdetail': (b, ctx) => { const l = ctx && ctx.lang; const r = (l && seed.contentI18n.rules[l]) || seed.inviteRules; return ok({ title: 'Rules', content: r.join('\n') }); },
   '/index/chlwhatsapp': () => ok({ url: store.get().settings.service }),
   '/index/paystatus': (b) => ok({ orderId: b.id || null, status: 'success', paid: true }),
   '/index/itemshare': (b) => ok({ link: 'https://orich.example/order/' + (b.id || ''), poster: store.img('goods/ing_Successfulpurchase.png') }),
@@ -298,7 +321,7 @@ const userRoutes = {
   '/index/notifications': (b, ctx) => {
     const s = store.get(); const u = ctx && ctx.user && ctx.user.user;
     const read = new Set((u && u.readNotifs) || []);
-    const list = s.notifications.map((n) => ({ ...n, read: read.has(n.id) }));
+    const list = s.notifications.map((n) => ({ ...localizeNotif(n, ctx && ctx.lang), read: read.has(n.id) }));
     return ok({ list, unread: list.filter((n) => !n.read).length });
   },
   '/index/notifyread': (b, ctx) => {
@@ -340,6 +363,15 @@ function addOrder(userId, type, extra) {
 }
 function ordersOf(userId, type) {
   return store.get().orders.filter((o) => o.userId === userId && o.type === type);
+}
+// Overlay hi/zh translations onto seeded content when the user's language isn't English.
+function localizeNotif(n, lang) {
+  const tr = lang && lang !== 'en' && seed.contentI18n.notifications[n.id] && seed.contentI18n.notifications[n.id][lang];
+  return tr ? { ...n, ...tr } : n;
+}
+function localizeHelp(list, lang) {
+  if (!lang || lang === 'en') return list;
+  return list.map((h) => { const tr = seed.contentI18n.help[h.id] && seed.contentI18n.help[h.id][lang]; return tr ? { ...h, ...tr } : h; });
 }
 
 // --- data-wiring helpers (real values for the UI sections) ---
@@ -582,7 +614,7 @@ function send(res, status, payload) {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body),
-    'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, token, Authorization',
+    'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, token, Authorization, lang',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Cache-Control': 'no-store',
   });
   res.end(body);
@@ -611,12 +643,20 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, handler(body, { admin }));
     }
 
-    const path = url.pathname.replace(/^\/api/, '');
-    const handler = userRoutes[path];
+    // Static assets / SPA (production): everything that isn't the JSON API.
+    if (!url.pathname.startsWith('/api/') && req.method === 'GET') {
+      if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) {
+        if (fs.existsSync(ADMIN_DIR) && serveStatic(res, ADMIN_DIR, url.pathname.replace(/^\/admin/, '') || '/')) return;
+      } else if (fs.existsSync(APP_DIR) && serveStatic(res, APP_DIR, url.pathname)) return;
+    }
+
+    const apiPath = url.pathname.replace(/^\/api/, '');
+    const handler = userRoutes[apiPath];
     if (!handler) return send(res, 404, err('Not found'));
     const user = userByToken(req);
-    if (USER_AUTH.has(path) && !user) return send(res, 200, err('Please sign in', 401));
-    return send(res, 200, handler(body, { user }));
+    if (USER_AUTH.has(apiPath) && !user) return send(res, 200, err('Please sign in', 401));
+    const lang = String(req.headers['lang'] || body.lang || 'en').toLowerCase();
+    return send(res, 200, handler(body, { user, lang }));
   } catch (e) {
     return send(res, 200, err('Server error: ' + e.message));
   }
