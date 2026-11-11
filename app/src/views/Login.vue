@@ -14,7 +14,6 @@ const { toast } = useToast();
 
 const phone = ref('');
 const code = ref('');
-const invite = ref('');
 const countdown = ref(0);
 const busy = ref(false);
 
@@ -24,7 +23,6 @@ async function sendCode() {
     const data = await api.sendVerify(phone.value);
     countdown.value = 60;
     const timer = setInterval(() => { if (--countdown.value <= 0) clearInterval(timer); }, 1000);
-    // Demo backend returns the code so testers can proceed without SMS.
     if (data.demoCode) { code.value = data.demoCode; toast('Demo code: ' + data.demoCode); }
   } catch (e) { toast(e.message); }
 }
@@ -33,53 +31,67 @@ async function submit() {
   if (!phone.value || !code.value) return toast(t('login.code'));
   busy.value = true;
   try {
-    await auth.signIn(phone.value, code.value, invite.value);
-    toast(t('login.title') + ' ✓');
+    await auth.signIn(phone.value, code.value);
     router.replace(route.query.redirect || '/account');
   } catch (e) { toast(e.message); }
   finally { busy.value = false; }
 }
 </script>
 
+<!-- Faithful rebuild of the real ORich 2.1.4 pages/login/login (real classes + scoped CSS). -->
 <template>
   <div class="login">
-    <div class="top">
-      <div class="logo">O</div>
-      <h1>{{ t('app.name') }}</h1>
-      <p>{{ t('login.title') }}</p>
+    <div class="backicon" @click="router.back()">
+      <span class="back-arrow">‹</span>
     </div>
 
-    <div class="form card">
-      <label>{{ t('login.phone') }}</label>
-      <input class="field" v-model="phone" type="tel" inputmode="numeric" placeholder="98765 43210" />
+    <div class="title">{{ t('login.title') }}</div>
+    <div class="tips">{{ t('login.tips') }}</div>
 
-      <label>{{ t('login.code') }}</label>
-      <div class="code-row">
-        <input class="field" v-model="code" inputmode="numeric" placeholder="----" />
-        <button class="send" :disabled="countdown > 0" @click="sendCode">
-          {{ countdown > 0 ? countdown + 's' : t('login.send') }}
-        </button>
+    <div class="input-title">{{ t('login.phone') }}</div>
+    <div class="inputview">
+      <span class="inputview-num">+91</span>
+      <span class="inputview-op"></span>
+      <input class="inputview-input" v-model="phone" type="tel" inputmode="numeric" :placeholder="t('login.phonePh')" />
+    </div>
+
+    <div class="input-title">{{ t('login.code') }}</div>
+    <div class="send">
+      <input class="send-input" v-model="code" inputmode="numeric" :placeholder="t('login.codePh')" />
+      <div class="wrap" @click="countdown === 0 && sendCode()">
+        {{ countdown > 0 ? countdown + 's' : t('login.send') }}
       </div>
+    </div>
 
-      <label>{{ t('login.invite') }}</label>
-      <input class="field" v-model="invite" placeholder="ORICH1234" />
+    <button class="nextbtn" :disabled="busy" @click="submit">{{ t('login.action') }}</button>
 
-      <button class="btn" style="margin-top:18px" :disabled="busy" @click="submit">{{ t('login.action') }}</button>
-      <p class="terms muted">{{ t('login.terms') }}</p>
+    <div class="user-rule">
+      <span class="user-rule-item">{{ t('login.terms') }} </span>
+      <span class="user-rule-item link">{{ t('login.rules') }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login { min-height: 100vh; background: linear-gradient(160deg, var(--brand), #b84a26); padding: 48px 20px 20px; }
-.top { text-align: center; color: #fff; margin-bottom: 24px; }
-.top .logo { width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 10px; background: #fff; color: var(--brand); font-weight: 800; font-size: 40px; display: flex; align-items: center; justify-content: center; }
-.top h1 { margin: 0; font-size: 26px; letter-spacing: 1px; }
-.top p { margin: 4px 0 0; opacity: 0.85; }
-.form { padding: 18px; }
-.form label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-.code-row { display: flex; gap: 8px; }
-.send { white-space: nowrap; padding: 0 14px; border-radius: 10px; background: #fdeee6; color: var(--brand); font-weight: 600; }
-.send:disabled { opacity: 0.6; }
-.terms { font-size: 11px; text-align: center; margin-top: 14px; line-height: 1.5; }
+/* Verbatim from the app's compiled stylesheet (rpx→px at 0.5); uni-* tags mapped to html. */
+.login { width: 100%; min-height: 100vh; padding: 0 15px; background: url('/static/image/login/bg.png'); background-size: 100% auto; }
+.login .backicon { display: flex; align-items: center; width: 100%; height: 49px; margin: 0 -7px; }
+.login .backicon .back-arrow { font-size: 30px; color: #17273a; line-height: 1; }
+.login .title { margin-top: 60px; padding: 0 10px; font-size: 24px; font-family: Roboto, Roboto-Medium; font-weight: 700; text-align: left; color: #17273a; }
+.login .tips { padding: 0 10px; font-size: 18px; font-family: Roboto, Roboto-Regular; font-weight: 400; text-align: left; color: #b9b9b9; }
+.login .input-title { padding: 0 10px; margin-top: 52px; margin-bottom: 8px; font-size: 16px; font-family: Roboto, Roboto-Regular; font-weight: 400; text-align: left; color: #17273a; }
+.login .inputview { display: flex; flex-direction: row; align-items: center; justify-content: center; padding: 10px 0; margin: 0 10px; border-bottom: 1px solid #ececec; }
+.login .inputview .inputview-num { font-size: 16px; font-family: 'PingFang SC', 'PingFang SC-Medium'; text-align: left; color: #17273a; }
+.login .inputview .inputview-op { width: 1px; height: 13px; margin: 0 8px; background-color: #b9b9b9; }
+.login .inputview .inputview-input { flex: 1; padding-left: 2px; font-size: 16px; font-family: 'PingFang SC', 'PingFang SC-Regular'; font-weight: 400; text-align: left; color: #17273a; border: none; outline: none; background: transparent; }
+.login .inputview .inputview-input::placeholder { color: silver; }
+.login .send { display: flex; flex-direction: row; align-items: flex-start; justify-content: center; width: 100%; padding: 0 10px; }
+.login .send .send-input { flex: 1; padding: 5px 0 9px 0; font-size: 16px; border: none; border-bottom: 1px solid #ececec; font-family: 'PingFang SC', 'PingFang SC-Regular'; font-weight: 400; text-align: left; color: #17273a; outline: none; background: transparent; }
+.login .send .send-input::placeholder { color: silver; }
+.login .send .wrap { min-width: 70px; padding: 4px 0 10px 0; color: #ee5016; font-size: 18px; font-family: 'PingFang SC', 'PingFang SC-Bold'; font-weight: 700; text-align: right; }
+.login .nextbtn { width: 100%; height: 46px; margin-top: 67px; border-radius: 6px; background: #ee5016; color: #fff; font-size: 17px; font-weight: 700; }
+.login .nextbtn:disabled { opacity: 0.6; }
+.login .user-rule { font-size: 13px; margin-top: 130px; padding: 0 10px; }
+.login .user-rule .user-rule-item { font-family: Roboto, Roboto-Regular; font-weight: 400; color: #b9b9b9; }
+.login .user-rule .user-rule-item.link { color: #ee5016; }
 </style>

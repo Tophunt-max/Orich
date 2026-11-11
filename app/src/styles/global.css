@@ -1,19 +1,20 @@
 :root {
-  --brand: #de6436;        /* ORich accent (tab selected) */
-  --brand-dark: #ce3c39;
-  --ink: #17273a;          /* tab / primary text */
-  --muted: #8a94a2;
-  --line: #eef0f3;
-  --bg: #f4f5f7;
+  /* Real ORich 2.1.4 tokens, extracted from the app's compiled view.css. */
+  --brand: #ee5016;        /* real action orange */
+  --brand-dark: #ff5c5c;   /* real price red */
+  --ink: #17273a;          /* primary text */
+  --muted: #b9b9b9;        /* real grey */
+  --line: #ececec;
+  --bg: #f6f6f6;           /* real page background */
   --card: #ffffff;
   --radius: 12px;
-  --maxw: 480px;
+  --maxw: 375px;           /* 750rpx design width → 1rpx = 0.5px */
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; background: #dfe2e7; }
 body {
-  font-family: 'Roboto', -apple-system, 'Segoe UI', 'Noto Sans', 'Noto Sans Devanagari', sans-serif;
+  font-family: 'Roboto', 'PingFang SC', -apple-system, 'Segoe UI', 'Noto Sans', 'Noto Sans Devanagari', sans-serif;
   color: var(--ink);
 }
 a { color: inherit; text-decoration: none; }
@@ -34,8 +35,9 @@ button { font-family: inherit; cursor: pointer; border: none; }
 
 .navbar {
   position: sticky; top: 0; z-index: 20;
-  height: 48px; display: flex; align-items: center; justify-content: center;
-  background: var(--brand); color: #fff; font-size: 17px; font-weight: 600;
+  height: 44px; display: flex; align-items: center; justify-content: center;
+  background: #fff; color: var(--ink); font-size: 16px; font-weight: 700;
+  border-bottom: 1px solid #f0f0f0;
 }
 .navbar .back { position: absolute; left: 12px; font-size: 22px; line-height: 1; }
 .navbar .right { position: absolute; right: 12px; font-size: 14px; font-weight: 500; }
