@@ -11,7 +11,7 @@ const products = [
     id: 1,
     title: 'iPhone 15 Pro Max 256GB',
     subtitle: 'Natural Titanium',
-    cover: img('goods/goods1.png'),
+    cover: '/static/products/p1.svg',
     price: 10,            // join price per share, in rupees
     marketValue: 159900,  // rupees
     total: 16000,         // shares needed
@@ -23,7 +23,7 @@ const products = [
     id: 2,
     title: 'Royal Enfield Classic 350',
     subtitle: 'Halcyon Green',
-    cover: img('goods/goods2.jpg'),
+    cover: '/static/products/p2.svg',
     price: 20,
     marketValue: 193000,
     total: 9650,
@@ -35,7 +35,7 @@ const products = [
     id: 3,
     title: '1 Gram Gold Coin (24K)',
     subtitle: 'Certified 999.9',
-    cover: img('home/img_lottery.png'),
+    cover: '/static/products/p3.svg',
     price: 5,
     marketValue: 7400,
     total: 1480,
@@ -47,7 +47,7 @@ const products = [
     id: 4,
     title: 'Samsung 55" 4K Smart TV',
     subtitle: 'Crystal UHD',
-    cover: img('home/img_Winning.png'),
+    cover: '/static/products/p4.svg',
     price: 10,
     marketValue: 54990,
     total: 5500,
@@ -58,10 +58,10 @@ const products = [
 ];
 
 const winners = [
-  { id: 101, name: 'rahul***', product: 'iPhone 14 128GB', avatar: img('home/img_Winning.png'), code: 'OR20260108', shares: 36, date: '2026-11-08' },
-  { id: 102, name: 'meena***', product: 'Gold Coin 2g', avatar: img('home/img_Winning.png'), code: 'OR20260107', shares: 12, date: '2026-11-07' },
-  { id: 103, name: 'arjun***', product: 'OnePlus 12R', avatar: img('home/img_Winning.png'), code: 'OR20260106', shares: 58, date: '2026-11-06' },
-  { id: 104, name: 'sana***', product: 'Smart Watch', avatar: img('home/img_Winning.png'), code: 'OR20260105', shares: 9, date: '2026-11-05' },
+  { id: 101, name: 'rahul***', product: 'iPhone 14 128GB', avatar: '/static/products/avatar.svg', code: 'OR20260108', shares: 36, date: '2026-11-08' },
+  { id: 102, name: 'meena***', product: 'Gold Coin 2g', avatar: '/static/products/avatar.svg', code: 'OR20260107', shares: 12, date: '2026-11-07' },
+  { id: 103, name: 'arjun***', product: 'OnePlus 12R', avatar: '/static/products/avatar.svg', code: 'OR20260106', shares: 58, date: '2026-11-06' },
+  { id: 104, name: 'sana***', product: 'Smart Watch', avatar: '/static/products/avatar.svg', code: 'OR20260105', shares: 9, date: '2026-11-05' },
 ];
 
 const finances = [
@@ -74,7 +74,7 @@ const rechargeOptions = [100, 300, 500, 1000, 2000, 5000];
 
 // Daily tasks (2.1.4 task/taskList + taskReceive).
 const tasks = [
-  { id: 1, title: 'Daily check-in', reward: 5, type: 'checkin', icon: img('home/icon_Tips.png') },
+  { id: 1, title: 'Daily check-in', reward: 5, type: 'checkin', icon: img('home/icon_Promotion.png') },
   { id: 2, title: 'Join any group-buy', reward: 10, type: 'join', icon: img('home/icon_1GroupBuy.png') },
   { id: 3, title: 'Invite a friend', reward: 50, type: 'invite', icon: img('home/icon_Invite.png') },
   { id: 4, title: 'Recharge ₹500+', reward: 20, type: 'recharge', icon: img('home/icon_Recharge.png') },
@@ -89,8 +89,21 @@ const vipTiers = [
 
 // Lucky instant-draw rounds (2.1.4 luckyList / luckyNow / luckyBuy).
 const luckyDraws = [
-  { id: 1, title: 'Lucky ₹1 Gold Draw', ticket: 1, pool: 500, sold: 318, prize: '1g Gold Coin', cover: img('home/img_lottery.png') },
-  { id: 2, title: 'Lucky ₹5 Cash Blast', ticket: 5, pool: 200, sold: 96, prize: '₹1,000 Cash', cover: img('home/img_Winning.png') },
+  { id: 1, title: 'Lucky ₹1 Gold Draw', ticket: 1, pool: 500, sold: 318, prize: '1g Gold Coin', cover: '/static/products/lucky.svg' },
+  { id: 2, title: 'Lucky ₹5 Cash Blast', ticket: 5, pool: 200, sold: 96, prize: '₹1,000 Cash', cover: '/static/products/cash.svg' },
+];
+
+// Prizes / prize pool (pages/prize/prize).
+const prizes = [
+  { id: 1, name: '₹100 Cashback', cost: 500, cover: img('home/icon_Recharge.png') },
+  { id: 2, name: 'Free Lucky Ticket', cost: 200, cover: '/static/products/lucky.svg' },
+  { id: 3, name: 'VIP Silver 7 days', cost: 1500, cover: '/static/products/cash.svg' },
+];
+
+// Mini games (pages/game/game).
+const games = [
+  { id: 1, name: 'Spin & Win', cover: '/static/products/lucky.svg', ticket: 10 },
+  { id: 2, name: 'Lucky Dice', cover: '/static/products/cash.svg', ticket: 5 },
 ];
 
 // A single demo account keyed by token.
@@ -103,8 +116,10 @@ function freshUser() {
     frozen: 0,
     inviteCode: 'ORICH' + Math.floor(1000 + Math.random() * 8999),
     teamCount: 0,
+    banks: [],
+    addresses: [],
     createdAt: Date.now(),
   };
 }
 
-module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, luckyDraws, freshUser, img };
+module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, luckyDraws, prizes, games, freshUser, img };

@@ -59,8 +59,8 @@ const userRoutes = {
       entries: [
         { key: 'recharge', label: 'Recharge', icon: store.img('home/icon_Recharge.png') },
         { key: 'invite', label: 'Invite', icon: store.img('home/icon_Invite.png') },
-        { key: 'task', label: 'Tasks', icon: store.img('home/icon_Tips.png') },
-        { key: 'vip', label: 'VIP', icon: store.img('home/icon_HotPicks.png') },
+        { key: 'task', label: 'Tasks', icon: store.img('home/icon_Promotion.png') },
+        { key: 'vip', label: 'VIP', icon: store.img('home/icon_Winner.png') },
         { key: 'orders', label: 'My Orders', icon: store.img('home/icon_MyOrders.png') },
         { key: 'support', label: 'Support', icon: store.img('home/icon_Support.png') },
       ],
@@ -176,6 +176,59 @@ const userRoutes = {
   '/index/usershare': (b, ctx) => ok({ list: store.get().winners.slice(0, 2) }),
   '/index/myteam': (b, ctx) => ok({ count: ctx.user.user.teamCount, inviteCode: ctx.user.user.inviteCode, levels: [{ level: 1, members: 0, commission: '0.00' }, { level: 2, members: 0, commission: '0.00' }], list: [] }),
   '/index/userinvitelist': (b, ctx) => ok({ inviteCode: ctx.user.user.inviteCode, list: [] }),
+
+  // Prizes & games (public lists)
+  '/index/price': () => ok({ list: store.get().prizes }),
+  '/index/getactivity': () => ok({ list: store.get().games }),
+
+  // Withdraw / cash-out
+  '/index/userwithdraw': (b, ctx) => {
+    const amount = Math.round(Number(b.amount) * 100); const u = ctx.user.user;
+    if (!amount || amount < 10000) return err('Minimum withdrawal is ₹100');
+    if (u.balance < amount) return err('Insufficient balance');
+    if (!(u.banks || []).length) return err('Add a bank account first');
+    u.balance -= amount;
+    const order = addOrder(u.id, 'withdraw', { amount: rupees(amount), status: 'pending' });
+    return ok({ order, balance: rupees(u.balance) }, 'Withdrawal requested');
+  },
+  '/index/cashlist': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'withdraw') }),
+  '/index/rechargerecord': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'recharge') }),
+
+  // Bank accounts
+  '/index/banklist': (b, ctx) => ok({ list: ctx.user.user.banks || [] }),
+  '/index/bankadd': (b, ctx) => {
+    const u = ctx.user.user; u.banks = u.banks || [];
+    const bank = { id: store.nextId('order'), type: b.type || 'Bank', holder: b.holder || '', number: b.number || '' };
+    u.banks.push(bank); store.save();
+    return ok({ bank }, 'Bank added');
+  },
+  '/index/bankdel': (b, ctx) => {
+    const u = ctx.user.user; u.banks = (u.banks || []).filter((x) => x.id !== Number(b.id)); store.save();
+    return ok({}, 'Removed');
+  },
+
+  // Addresses
+  '/index/addresslist': (b, ctx) => ok({ list: ctx.user.user.addresses || [] }),
+  '/index/addressadd': (b, ctx) => {
+    const u = ctx.user.user; u.addresses = u.addresses || [];
+    const a = { id: store.nextId('order'), name: b.name || '', phone: b.phone || '', line: b.line || '', isDefault: !u.addresses.length };
+    u.addresses.push(a); store.save();
+    return ok({ address: a }, 'Address saved');
+  },
+  '/index/addressdel': (b, ctx) => {
+    const u = ctx.user.user; u.addresses = (u.addresses || []).filter((x) => x.id !== Number(b.id)); store.save();
+    return ok({}, 'Removed');
+  },
+
+  // Account profile edit
+  '/index/accountedit': (b, ctx) => {
+    const u = ctx.user.user; if (b.nickname) u.nickname = String(b.nickname).slice(0, 24); store.save();
+    return ok({ user: userView(u) }, 'Saved');
+  },
+  '/index/orderdetail': (b, ctx) => {
+    const o = store.get().orders.find((x) => x.id === Number(b.id) && x.userId === ctx.user.user.id);
+    return o ? ok({ order: o }) : err('Order not found');
+  },
 };
 
 function addOrder(userId, type, extra) {

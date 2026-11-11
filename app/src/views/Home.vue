@@ -13,7 +13,6 @@ function toggleLang() {
   locale.value = locale.value === 'en' ? 'hi' : 'en';
   localStorage.setItem('orich_lang', locale.value);
 }
-
 function go(key) {
   const map = { recharge: '/recharge', invite: '/invitation', orders: '/orders', support: '/help', task: '/tasks', vip: '/vip' };
   router.push(map[key] || '/home');
@@ -24,74 +23,56 @@ onMounted(async () => {
 });
 </script>
 
+<!-- Faithful rebuild of the real pages/home/home (nav-logo, banner, quick-tab, notice, nshop list). -->
 <template>
-  <div class="page">
-    <header class="hero">
-      <span class="logo">O</span>
-      <span class="brand">{{ t('app.name') }}</span>
-      <button class="lang" @click="toggleLang">{{ locale === 'en' ? 'हिं' : 'EN' }}</button>
-    </header>
+  <div class="home">
+    <div class="home-background" :style="{ backgroundImage: `url(${data?.banners?.[0] || '/static/image/home/bg_homepage.png'})` }"></div>
 
-    <div v-if="loading" class="empty">{{ t('common.loading') }}</div>
+    <div class="nav-logo">
+      <span class="logo-badge">O</span><span class="logo-word">ORich</span>
+      <span class="home-lang" @click="toggleLang">{{ locale === 'en' ? 'हिं' : 'EN' }}</span>
+    </div>
+
+    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
 
     <template v-else-if="data">
-      <div class="banner card">
-        <img :src="data.banners[0]" alt="banner" />
-      </div>
+      <div class="banner"><img :src="data.banners[0]" alt="" /></div>
 
-      <div class="notice card">
-        <img src="/static/image/home/icon_Tips.png" class="tip" alt="" />
-        <span>{{ data.notice }}</span>
-      </div>
-
-      <div class="entries card">
-        <button v-for="e in data.entries" :key="e.key" class="entry" @click="go(e.key)">
+      <div class="tab">
+        <div v-for="e in data.entries" :key="e.key" class="tab-item" @click="go(e.key)">
           <img :src="e.icon" :alt="e.label" />
-          <span>{{ e.label }}</span>
-        </button>
-      </div>
-
-      <div class="section-title">
-        <span>🔥 {{ t('home.hot') }}</span>
-      </div>
-      <div class="hot-scroll">
-        <div v-for="p in data.hot" :key="p.id" class="hot-card card" @click="router.push('/goods/' + p.id)">
-          <img :src="p.cover" :alt="p.title" />
-          <div class="hot-title">{{ p.title }}</div>
-          <div class="price">₹{{ p.price }} / {{ t('product.shares') }}</div>
+          <div class="tab-item-text">{{ e.label }}</div>
         </div>
       </div>
 
-      <div class="section-title">
-        <span>{{ t('home.groupBuy') }}</span>
+      <div class="toast">
+        <div class="toast-swiper-item">
+          <div class="toast-swiper-item-img"><img :src="data.winners[0]?.avatar" alt="" /></div>
+          <div class="toast-swiper-item-main">
+            <span class="name">{{ data.winners[0]?.name }}</span> won {{ data.winners[0]?.product }}
+          </div>
+        </div>
       </div>
-      <div class="list">
-        <div v-for="p in data.list" :key="p.id" class="prod card" @click="router.push('/goods/' + p.id)">
-          <img class="cover" :src="p.cover" :alt="p.title" />
-          <div class="info">
-            <div class="ptitle">{{ p.title }}</div>
-            <div class="muted sub">{{ p.subtitle }}</div>
-            <div class="progress"><span :style="{ width: p.percent + '%' }"></span></div>
-            <div class="row">
-              <span class="muted">{{ p.joined }} {{ t('home.joined') }} · {{ p.remaining }} {{ t('home.remaining') }}</span>
-              <span class="badge">{{ t('product.' + p.status) }}</span>
+
+      <div class="newbie">
+        <div class="newbie-title">
+          <span class="newbie-title-text">{{ t('home.groupBuy') }}</span>
+          <span class="newbie-title-help" @click="router.push('/winner')">{{ t('home.viewAll') }} ›</span>
+        </div>
+        <div v-for="p in data.list" :key="p.id" class="nshop" @click="router.push('/goods/' + p.id)">
+          <img class="nshop-img" :src="p.cover" :alt="p.title" />
+          <div class="nshop-detail">
+            <div class="nshop-title">{{ p.title }}</div>
+            <div class="nshop-countdown">{{ p.subtitle }}</div>
+            <div class="nshop-precent">
+              <div class="nshop-progress"><div class="bar"><span :style="{ width: p.percent + '%' }"></span></div></div>
+              <div class="nshop-progress-text">{{ p.percent }}%</div>
+            </div>
+            <div class="nshop-price">
+              <span class="np">₹{{ p.price }}<i>/{{ t('product.shares') }}</i></span>
+              <span class="nbtn">{{ t('product.joinNow') }}</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="section-title">
-        <span>{{ t('home.latestWinners') }}</span>
-        <span class="muted" style="font-size:13px" @click="router.push('/winner')">{{ t('home.viewAll') }} ›</span>
-      </div>
-      <div class="winners card">
-        <div v-for="w in data.winners" :key="w.id" class="wrow">
-          <img :src="w.avatar" alt="" />
-          <div>
-            <div>{{ w.name }}</div>
-            <div class="muted" style="font-size:12px">{{ w.product }}</div>
-          </div>
-          <span class="muted" style="font-size:12px;margin-left:auto">{{ w.date }}</span>
         </div>
       </div>
     </template>
@@ -99,30 +80,46 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.hero { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--brand); color: #fff; }
-.hero .logo { width: 30px; height: 30px; border-radius: 8px; background: #fff; color: var(--brand); font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center; }
-.hero .brand { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
-.hero .lang { margin-left: auto; background: rgba(255,255,255,0.2); color: #fff; border-radius: 14px; padding: 4px 12px; font-size: 13px; }
-.banner { margin: 12px; overflow: hidden; }
-.banner img { width: 100%; height: 150px; object-fit: cover; }
-.notice { margin: 0 12px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.notice .tip { width: 18px; height: 18px; }
-.entries { margin: 12px; padding: 14px 6px; display: flex; }
-.entry { flex: 1; background: none; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); }
-.entry img { width: 34px; height: 34px; object-fit: contain; }
-.hot-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 12px 4px; }
-.hot-card { flex: 0 0 132px; padding: 8px; }
-.hot-card img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
-.hot-title { font-size: 13px; margin: 6px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
-.prod { display: flex; padding: 10px; gap: 10px; }
-.prod .cover { width: 96px; height: 96px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; }
-.info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.ptitle { font-weight: 600; font-size: 14px; }
-.sub { font-size: 12px; }
-.row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
-.winners { margin: 0 12px; padding: 4px 12px; }
-.wrow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.wrow:last-child { border-bottom: none; }
-.wrow img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.home { position: relative; min-height: 100vh; padding-bottom: 49px; background-color: #f6f6f6; }
+.home-background { height: 165px; width: 100%; position: absolute; top: 0; left: 0; background-size: 100% 100%; background-repeat: no-repeat; }
+.nav-logo { position: relative; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 7px; width: 100%; height: 44px; z-index: 2; }
+.logo-badge { width: 26px; height: 26px; border-radius: 7px; background: #ee5016; color: #fff; font-weight: 800; font-size: 17px; display: flex; align-items: center; justify-content: center; }
+.logo-word { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+.home-lang { position: absolute; right: 15px; background: rgba(255,255,255,0.25); color: #fff; border-radius: 12px; padding: 3px 10px; font-size: 12px; }
+.loading { position: relative; z-index: 2; text-align: center; color: #fff; padding: 40px; }
+
+.banner { position: relative; z-index: 2; width: 100%; padding: 4px 12px 0; }
+.banner img { width: 100%; height: 139px; object-fit: cover; border-radius: 8px; }
+
+.tab { position: relative; z-index: 2; display: flex; flex-direction: row; align-items: flex-start; padding: 13px 10px; margin: 11px 12px 0; background-color: #fff; border-radius: 8px; }
+.tab-item { flex: 1; text-align: center; }
+.tab-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: contain; }
+.tab-item-text { margin-top: 2px; font-size: 12px; font-family: 'PingFang SC', 'PingFang SC-Bold'; font-weight: 700; color: #4f4f4f; }
+
+.toast { position: relative; z-index: 2; margin: 11px 12px 0; border-radius: 8px; padding: 11px 12px; background-color: #fff; overflow: hidden; }
+.toast-swiper-item { display: flex; align-items: center; }
+.toast-swiper-item-img { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; }
+.toast-swiper-item-img img { width: 100%; height: 100%; object-fit: cover; }
+.toast-swiper-item-main { flex: 1; margin-left: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #686868; }
+.toast-swiper-item-main .name { color: #ee5016; }
+
+.newbie { position: relative; z-index: 2; margin: 11px 12px 0; padding: 2px 0 12px; background: #fff; box-shadow: 0 4px 14px 0 rgba(0,0,0,.05); border-radius: 8px; overflow: hidden; }
+.newbie .nshop + .nshop { margin-top: 16px; padding-top: 16px; border-top: 1px solid #f4f4f4; }
+.newbie-title { display: flex; flex-direction: row; align-items: center; margin: 18px 16px 4px; }
+.newbie-title-text { font-size: 18px; font-family: Roboto, Roboto-Bold; font-weight: 700; color: #17273a; }
+.newbie-title-help { flex: 1; font-size: 14px; font-weight: 400; text-align: right; color: #b9b9b9; }
+.nshop { position: relative; display: flex; flex-direction: row; align-items: flex-start; margin-top: 12px; padding: 0 14px; }
+.nshop-img { flex-shrink: 0; width: 82px; height: 82px; margin-right: 12px; border-radius: 4px; object-fit: cover; }
+.nshop-detail { flex: 1; min-width: 0; }
+.nshop-title { font-size: 14px; font-family: 'PingFang SC', 'PingFang SC-Bold'; font-weight: 700; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nshop-countdown { font-size: 13px; color: #b9b9b9; margin-top: 2px; }
+.nshop-precent { display: flex; flex-direction: row; align-items: center; margin-top: 6px; }
+.nshop-progress { flex: 1; padding-right: 12px; }
+.nshop-progress .bar { height: 8px; border-radius: 6px; background: #f0e3dc; overflow: hidden; }
+.nshop-progress .bar span { display: block; height: 100%; background: linear-gradient(115deg, #ffe44b, #fea326); }
+.nshop-progress-text { font-size: 14px; font-weight: 700; color: #000; }
+.nshop-price { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.nshop-price .np { font-size: 18px; font-weight: 700; color: #ff5c5c; }
+.nshop-price .np i { font-size: 12px; font-weight: 400; color: #b9b9b9; font-style: normal; }
+.nshop-price .nbtn { padding: 5px 16px; background: linear-gradient(115deg, #ffe44b, #fea326); border-radius: 14px; font-size: 13px; font-weight: 700; color: #ad6701; }
 </style>

@@ -17,6 +17,8 @@ function freshState() {
     tasks: seed.tasks.map((t) => ({ ...t })),
     vipTiers: seed.vipTiers.map((v) => ({ ...v })),
     luckyDraws: seed.luckyDraws.map((l) => ({ ...l })),
+    prizes: seed.prizes.map((p) => ({ ...p })),
+    games: seed.games.map((g) => ({ ...g })),
     rechargeOptions: [...seed.rechargeOptions],
     settings: {
       name: 'ORich',
