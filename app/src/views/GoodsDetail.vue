@@ -34,7 +34,14 @@ function load(data) {
   peopleAvatars.value = data.item.peopleAvatars || [];
 }
 
-onMounted(async () => { load(await api.product(route.params.id)); });
+onMounted(async () => {
+  load(await api.product(route.params.id));
+  // Prefer the live participation list; fall back to the embedded one when empty.
+  try {
+    const jl = await api.joinList(route.params.id);
+    if (jl?.list?.length) participants.value = jl.list;
+  } catch { /* keep embedded fallback */ }
+});
 
 async function join() {
   if (!auth.isLoggedIn) return router.push({ path: '/login', query: { redirect: route.fullPath } });

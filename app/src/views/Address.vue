@@ -17,6 +17,11 @@ onMounted(load);
 async function del(id) {
   try { await api.addressDel(id); toast('Removed'); load(); } catch (e) { toast(e.message); }
 }
+
+async function setDefault(a) {
+  if (!a || a.isDefault) return;
+  try { await api.addressSetDefault(a.id); toast('Default updated'); load(); } catch (e) { toast(e.message); }
+}
 </script>
 
 <!-- Faithful rebuild of the real pages/address/address (.address) + scoped CSS. -->
@@ -39,7 +44,7 @@ async function del(id) {
         <div class="middle_content">{{ a.line }}</div>
       </div>
       <div class="bottom">
-        <div class="bottom-radio" :class="{ 'bottom-select': a.isDefault }">
+        <div class="bottom-radio" :class="{ 'bottom-select': a.isDefault }" @click="setDefault(a)">
           <div class="bottom-circle"></div>
           <span>Default address</span>
         </div>

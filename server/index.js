@@ -266,6 +266,48 @@ const userRoutes = {
     const o = store.get().orders.find((x) => x.id === Number(b.id) && x.userId === ctx.user.user.id);
     return o ? ok({ order: o }) : err('Order not found');
   },
+
+  // ---------- APK parity: group-buy item extras ----------
+  '/index/duobaoitem': () => ok({ list: store.get().products.map(productView) }),
+  '/index/duobaoitem1': () => ok({ list: store.get().products.map(productView) }),
+  '/index/kind': () => ok({ list: seed.categories }),
+  '/index/duobaoitemjoinlist': (b) => { const p = store.get().products.find((x) => x.id === Number(b.id)); return p ? ok({ list: productDetailView(p).participants }) : err('Product not found'); },
+  '/index/duobaoitemhistory': (b) => { const p = store.get().products.find((x) => x.id === Number(b.id)); return ok({ list: store.get().winners.slice(0, 5).map((w) => ({ ...w, product: p ? p.title : w.product })) }); },
+  '/index/duobaoitemshare': (b) => ok({ link: 'https://orich.example/goods/' + (b.id || ''), poster: store.img('goods/img_confirm.png'), code: 'OR' + (b.id || '') }),
+  '/index/duobaoitemlottery': (b) => { const p = store.get().products.find((x) => x.id === Number(b.id)); return ok({ item: p ? productView(p) : null, winner: store.get().winners[0] || null }); },
+  '/index/activitydetail': (b) => { const g = store.get().games.find((x) => x.id === Number(b.id)) || store.get().games[0]; return ok({ item: g, ...lotteryRound() }); },
+
+  // ---------- APK parity: lottery / game ----------
+  '/index/getlotterytime': () => ok(lotteryRound()),
+  '/index/getlotteryresult': () => ok({ list: lotteryResults() }),
+  '/index/getnumbermax': () => ok({ max: 9, maxBet: 100000 }),
+
+  // ---------- APK parity: finance extras ----------
+  '/index/financeOrderRecent': () => ok({ list: financeArrivals() }),
+  '/index/financeDetailHistory': (b) => ok({ list: financeHistory(Number(b.id)) }),
+
+  // ---------- APK parity: answers / after-sales / misc ----------
+  '/index/getanswer': () => ok({ list: store.get().helpItems || seed.helpItems }),
+  '/index/runoobdetail': () => ok({ title: 'Rules', content: seed.inviteRules.join('\n') }),
+  '/index/chlwhatsapp': () => ok({ url: store.get().settings.service }),
+  '/index/paystatus': (b) => ok({ orderId: b.id || null, status: 'success', paid: true }),
+  '/index/itemshare': (b) => ok({ link: 'https://orich.example/order/' + (b.id || ''), poster: store.img('goods/ing_Successfulpurchase.png') }),
+  '/index/userinvitetop': () => ok({ list: inviteTop() }),
+
+  // ---------- APK parity: authed records / edits / actions ----------
+  '/index/userrebatelist': (b, ctx) => ok({ list: rebateList(ctx.user.user) }),
+  '/index/userconsume': (b, ctx) => ok({ list: store.get().orders.filter((o) => o.userId === ctx.user.user.id && o.type !== 'recharge').reverse() }),
+  '/index/useritem': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'join') }),
+  '/index/getUserAfs': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'afs') }),
+  '/index/editAfStatus': (b, ctx) => ok({}, 'After-sales updated'),
+  '/index/itemdetail': (b, ctx) => { const o = store.get().orders.find((x) => x.id === Number(b.id) && x.userId === ctx.user.user.id); return o ? ok({ item: o }) : err('Not found'); },
+  '/index/itemedit': (b, ctx) => { const o = store.get().orders.find((x) => x.id === Number(b.id) && x.userId === ctx.user.user.id); if (!o) return err('Not found'); if (b.addressId != null) o.addressId = Number(b.addressId); store.save(); return ok({ item: o }, 'Saved'); },
+  '/index/itemdefaultaddr': (b, ctx) => { const list = ctx.user.user.addresses || []; return ok({ address: list.find((a) => a.isDefault) || list[0] || null }); },
+  '/index/addorderpay': (b, ctx) => { const p = store.get().products.find((x) => x.id === Number(b.id)); if (!p) return err('Product not found'); const shares = Math.max(1, Number(b.shares) || 1); const cost = shares * p.price * 100; return ok({ payUrl: 'https://orich.example/pay?o=' + Date.now() + '&amt=' + rupees(cost), amount: rupees(cost), channel: b.channel || 'upi' }, 'Proceed to payment'); },
+  '/index/joinactivity': (b, ctx) => { const u = ctx.user.user; const amount = Math.round(Number(b.amount || b.ticket || 10) * 100); if (!amount || u.balance < amount) return err('Insufficient balance'); u.balance -= amount; const label = 'Lucky Ball' + (b.color ? ' ' + b.color : '') + (b.number != null ? ' #' + b.number : ''); const order = addOrder(u.id, 'lucky', { product: label, amount: rupees(amount), status: 'entered' }); return ok({ order, balance: rupees(u.balance), ...lotteryRound() }, 'Bet placed'); },
+  '/index/bankedit': (b, ctx) => { const bk = (ctx.user.user.banks || []).find((x) => x.id === Number(b.id)); if (!bk) return err('Not found'); if (b.type != null) bk.type = b.type; if (b.holder != null) bk.holder = b.holder; if (b.number != null) bk.number = b.number; store.save(); return ok({ bank: bk }, 'Saved'); },
+  '/index/addressedit': (b, ctx) => { const a = (ctx.user.user.addresses || []).find((x) => x.id === Number(b.id)); if (!a) return err('Not found'); ['name', 'phone', 'line'].forEach((k) => { if (b[k] != null) a[k] = b[k]; }); store.save(); return ok({ address: a }, 'Saved'); },
+  '/index/addresschangedefault': (b, ctx) => { (ctx.user.user.addresses || []).forEach((a) => { a.isDefault = a.id === Number(b.id); }); store.save(); return ok({}, 'Default address set'); },
 };
 
 function addOrder(userId, type, extra) {
@@ -337,11 +379,58 @@ function teamOf(user) {
     directReward: reward(direct, 0.08).toFixed(2), indirectReward: reward(indirect, 0.03).toFixed(2),
   };
 }
+// Lucky-ball game round: 3-minute cadence, next boundary = round close.
+function lotteryRound() {
+  const span = 3 * 60e3;
+  const endAt = Math.ceil(Date.now() / span) * span;
+  const period = '1' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + String(Math.floor(endAt / span) % 1000).padStart(3, '0');
+  return { period, endAt, serverTime: Date.now() };
+}
+function lotteryResults() {
+  const colors = ['green', 'violet', 'red'];
+  const base = Number(new Date().toISOString().slice(0, 10).replace(/-/g, ''));
+  return Array.from({ length: 8 }, (_, i) => ({ period: '1' + (base) + String(8 - i).padStart(3, '0'), number: (i * 3 + 7) % 10, color: colors[(i * 3 + 7) % 10 === 0 ? 0 : i % 3] }));
+}
+function financeHistory(id) {
+  const f = store.get().finances.find((x) => x.id === id);
+  if (!f) return [];
+  const n = Math.min(f.days, 7);
+  return Array.from({ length: n }, (_, i) => ({ day: i + 1, date: new Date(Date.now() - i * 864e5).toISOString().slice(0, 10), earning: (f.min * (f.rate / 100)).toFixed(2) }));
+}
+// Referral commission records for the user (from invitees' real spend).
+function rebateList(user) {
+  const s = store.get();
+  const rows = [];
+  const direct = s.users.filter((u) => u.invitedBy === user.inviteCode);
+  const directCodes = new Set(direct.map((u) => u.inviteCode));
+  const indirect = s.users.filter((u) => directCodes.has(u.invitedBy));
+  const add = (arr, level, rate) => arr.forEach((u) => {
+    const spend = s.orders.filter((o) => o.userId === u.id && (o.type === 'join' || o.type === 'recharge')).reduce((a, o) => a + (Number(o.amount) || 0), 0);
+    if (spend > 0) rows.push({ name: u.nickname || ('ORich' + String(u.phone).slice(-4)), level, date: new Date(u.createdAt).toISOString().slice(0, 10), amount: (spend * rate).toFixed(2) });
+  });
+  add(direct, 'Direct', 0.08); add(indirect, 'Indirect', 0.03);
+  return rows;
+}
+// Invite leaderboard (server-side aggregate; demo values when no real data).
+function inviteTop() {
+  const s = store.get();
+  const counts = {};
+  s.users.forEach((u) => { if (u.invitedBy) counts[u.invitedBy] = (counts[u.invitedBy] || 0) + 1; });
+  const real = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10)
+    .map(([code, n], i) => ({ rank: i + 1, name: code, invites: n, reward: (n * 25).toFixed(2) }));
+  if (real.length) return real;
+  return [['rahul***', 128], ['meena***', 96], ['arjun***', 74], ['sana***', 61], ['abdul***', 53]]
+    .map(([name, n], i) => ({ rank: i + 1, name, invites: n, reward: (n * 25).toFixed(2) }));
+}
 
 const USER_AUTH = new Set(['/index/useraccount', '/index/userbalance', '/index/addrechargepay2', '/index/addorder',
   '/index/ordernews', '/index/userjoin', '/index/mywinner', '/index/usershare', '/index/logout', '/index/financeBuy',
   '/index/myFinanceList', '/index/myteam', '/index/userinvitelist', '/index/vipBuy', '/index/luckyBuy',
-  '/index/luckyOrderList', '/index/taskReceive']);
+  '/index/luckyOrderList', '/index/taskReceive',
+  // APK-parity authed endpoints
+  '/index/userrebatelist', '/index/userconsume', '/index/useritem', '/index/getUserAfs', '/index/editAfStatus',
+  '/index/itemdetail', '/index/itemedit', '/index/itemdefaultaddr', '/index/addorderpay', '/index/joinactivity',
+  '/index/bankedit', '/index/addressedit', '/index/addresschangedefault']);
 
 // ----------------------------- admin API -----------------------------
 const COLLECTIONS = { products: 'product', winners: 'winner', finances: 'finance', tasks: null, vipTiers: 'vip', luckyDraws: 'lucky' };

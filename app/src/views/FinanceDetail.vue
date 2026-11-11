@@ -29,6 +29,8 @@ const canBuy = computed(() => {
 // Participant feed and rules come from the real backend response.
 const participants = ref([]);
 const rules = ref([]);
+// Daily earning history for this plan (from api.financeHistory).
+const history = ref([]);
 
 onMounted(async () => {
   const d = await api.finance(route.params.id);
@@ -37,6 +39,10 @@ onMounted(async () => {
   rules.value = d.rules || [];
   amount.value = item.value.min;
   auth.refresh();
+  try {
+    const h = await api.financeHistory(route.params.id);
+    history.value = h?.list || [];
+  } catch { history.value = []; }
 });
 
 async function invest() {
@@ -120,6 +126,16 @@ async function invest() {
       </div>
     </div>
 
+    <!-- Earnings history (real daily earnings for this plan) -->
+    <div v-if="history.length" class="fdetail_history">
+      <div class="fdetail_history_title">Earnings history</div>
+      <div v-for="(h, i) in history" :key="i" class="fdetail_history_row">
+        <span class="day">Day {{ h.day }}</span>
+        <span class="date">{{ h.date }}</span>
+        <span class="earn">+₹{{ h.earning }}</span>
+      </div>
+    </div>
+
     <!-- fixed buy bar -->
     <div class="btn_buy">
       <div class="btn_buy_price">
@@ -178,6 +194,13 @@ async function invest() {
 .fdetail_part_main_item_user_buyin .earn { margin-left: 6px; color: #ff5c5c; }
 .fdetail_part_html { padding: 12px 15px 16px; font-size: 13px; line-height: 1.8; color: #566c82; }
 .fdetail_part_html p { margin: 0; }
+.fdetail_history { margin-top: 10px; background: #fff; padding: 14px 15px 6px; }
+.fdetail_history_title { font-size: 15px; font-weight: 700; color: #17273a; margin-bottom: 8px; }
+.fdetail_history_row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: .5px solid #ececec; font-size: 14px; }
+.fdetail_history_row:last-child { border-bottom: none; }
+.fdetail_history_row .day { color: #17273a; font-weight: 500; }
+.fdetail_history_row .date { color: #b9b9b9; font-size: 13px; }
+.fdetail_history_row .earn { color: #ff5c5c; font-weight: 700; }
 .btn_buy { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: var(--maxw); height: 49px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px 0 30px; background: #fff; border-top: 1px solid #f9f9f9; }
 .btn_buy_price .price { font-size: 16px; font-weight: 700; color: #ff5c5c; }
 .btn_buy_price .balance { font-size: 13px; font-weight: 400; color: #b9b9b9; white-space: nowrap; }
