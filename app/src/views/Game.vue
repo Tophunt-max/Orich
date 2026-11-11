@@ -9,14 +9,21 @@ const router = useRouter();
 const auth = useAuth();
 const { toast } = useToast();
 
-const games = ref([]);
-const draws = ref([]);
 const showRule = ref(false);
 const tab = ref(0);
 const busy = ref(false);
 
-// Active lucky round (first available), used for period / ticket / buy id.
-const round = computed(() => draws.value[0] || null);
+// Real Lucky-ball round state (from api.lotteryTime).
+const period = ref('');
+const endAt = ref(0);
+const remaining = ref(0);
+let timer = null;
+
+// Past draw results (from api.lotteryResult).
+const results = ref([]);
+
+// Fixed bet unit for an entry.
+const amount = ref(1);
 
 // Balance as rupees from the signed-in user, if any.
 const balance = computed(() => {
@@ -25,11 +32,7 @@ const balance = computed(() => {
   return typeof b === 'number' ? b.toFixed(2) : String(b);
 });
 
-// Notice ticker lines built from recent winners-ish data (games list) with a safe fallback.
-const notice = computed(() => {
-  const g = games.value[0];
-  return g ? g.name + ' pays out big every round' : 'Pick a colour and win instantly';
-});
+const notice = computed(() => 'Pick a colour and win instantly');
 
 // Number grid 0-9, each tagged with a colour group shown as a small circle.
 const numbers = [
@@ -45,39 +48,67 @@ const numbers = [
   { n: 9, colors: ['cgreen'] },
 ];
 
-// Simple countdown timer (mm:ss) that loops; purely cosmetic.
-const secs = ref(179);
-let timer = null;
 const countdown = computed(() => {
-  const m = String(Math.floor(secs.value / 60)).padStart(2, '0');
-  const s = String(secs.value % 60).padStart(2, '0');
+  const total = Math.max(0, remaining.value);
+  const m = String(Math.floor(total / 60)).padStart(2, '0');
+  const s = String(total % 60).padStart(2, '0');
   return m + ':' + s;
 });
-const period = computed(() => {
-  const d = new Date();
-  return (round.value?.id ?? 1) + '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-});
+
+// Map a grid colour class ("cgreen") to the API colour ("green").
+function apiColor(c) {
+  return String(c || '').replace(/^c/, '');
+}
+
+async function loadTime() {
+  try {
+    const data = await api.lotteryTime();
+    period.value = data?.period ?? '';
+    endAt.value = Number(data?.endAt) || 0;
+    const server = Number(data?.serverTime) || Date.now();
+    remaining.value = Math.max(0, Math.round((endAt.value - server) / 1000));
+  } catch { /* leave previous values */ }
+}
+
+async function loadResults() {
+  try {
+    const data = await api.lotteryResult();
+    results.value = data?.list || [];
+  } catch { results.value = []; }
+}
 
 onMounted(async () => {
-  try { games.value = (await api.games()).list || []; } catch { /* ignore */ }
-  try { draws.value = (await api.luckyList()).list || []; } catch { /* ignore */ }
+  await Promise.all([loadTime(), loadResults()]);
   if (auth.isLoggedIn) await auth.refresh();
-  timer = setInterval(() => { secs.value = secs.value > 0 ? secs.value - 1 : 179; }, 1000);
+  timer = setInterval(() => {
+    if (remaining.value > 0) {
+      remaining.value -= 1;
+    } else {
+      // Round closed: pull the next round and refresh results.
+      loadTime();
+      loadResults();
+    }
+  }, 1000);
 });
 onBeforeUnmount(() => clearInterval(timer));
 
-async function bet(color) {
+async function place({ color, number = null }) {
   if (busy.value) return;
-  const id = round.value?.id;
-  if (!auth.isLoggedIn || id == null) {
-    toast('Bet placed on ' + color + ' (demo)');
+  if (!auth.isLoggedIn) {
+    router.push('/login');
     return;
   }
   busy.value = true;
   try {
-    const data = await api.luckyBuy(id);
-    auth.user = { ...auth.user, balance: data.balance };
-    toast('Entry confirmed on ' + color);
+    const data = await api.joinActivity({ color, number, amount: amount.value });
+    await auth.refresh();
+    if (data?.period) period.value = data.period;
+    if (data?.endAt) {
+      endAt.value = Number(data.endAt) || endAt.value;
+    }
+    const where = number == null ? color : color + ' ' + number;
+    const bal = data?.balance != null ? ' · ₹' + data.balance : '';
+    toast('Entry confirmed on ' + where + bal);
   } catch (e) {
     toast(e.message || 'Could not place bet');
   } finally {
@@ -116,7 +147,7 @@ async function bet(color) {
             <div class="icon"><img src="/static/image/game/icon_notice.png" alt="" /></div>
             <div class="content">
               <span class="content_text">{{ notice }}</span>
-              <span class="content_price">₹{{ round?.ticket ?? 1 }}</span>
+              <span class="content_price">₹{{ amount }}</span>
             </div>
           </div>
         </div>
@@ -124,7 +155,7 @@ async function bet(color) {
 
       <div class="game_lucky_join">
         <div class="game_lucky_join_period">
-          <div class="game_lucky_join_period_issue title">Period #{{ period }}</div>
+          <div class="game_lucky_join_period_issue title">Period #{{ period || '—' }}</div>
           <div class="title">Countdown
             <div class="tdown">{{ countdown }}</div>
           </div>
@@ -133,13 +164,13 @@ async function bet(color) {
         <div class="game_lucky_tips">Choose a colour, then a number to join the round</div>
 
         <div class="game_lucky_join_select">
-          <div class="game_lucky_join_select_button cgreen" :class="{ unable: busy }" @click="bet('Green')">Green</div>
-          <div class="game_lucky_join_select_button cviolet" :class="{ unable: busy }" @click="bet('Violet')">Violet</div>
-          <div class="game_lucky_join_select_button cred" :class="{ unable: busy }" @click="bet('Red')">Red</div>
+          <div class="game_lucky_join_select_button cgreen" :class="{ unable: busy }" @click="place({ color: 'green' })">Green</div>
+          <div class="game_lucky_join_select_button cviolet" :class="{ unable: busy }" @click="place({ color: 'violet' })">Violet</div>
+          <div class="game_lucky_join_select_button cred" :class="{ unable: busy }" @click="place({ color: 'red' })">Red</div>
         </div>
 
         <div class="game_lucky_join_nums">
-          <div v-for="item in numbers" :key="item.n" class="number" @click="bet('Number ' + item.n)">
+          <div v-for="item in numbers" :key="item.n" class="number" @click="place({ color: apiColor(item.colors[0]), number: item.n })">
             {{ item.n }}
             <div class="number_icon">
               <span v-for="(c, i) in item.colors" :key="i" class="cicle" :class="c"></span>
@@ -160,6 +191,21 @@ async function bet(color) {
       </div>
     </div>
 
+    <!-- My Orders tab: local/empty for now -->
+    <div v-if="tab === 0" class="game_list">
+      <div class="game_list_empty">No orders yet</div>
+    </div>
+
+    <!-- Records tab: past draw results from the backend -->
+    <div v-else class="game_list">
+      <div v-for="(r, i) in results" :key="i" class="game_record">
+        <span class="game_record_period">#{{ r.period }}</span>
+        <span class="game_record_number">{{ r.number }}</span>
+        <span class="game_record_dot" :class="'c' + r.color"></span>
+      </div>
+      <div v-if="!results.length" class="game_list_empty">No records yet</div>
+    </div>
+
     <div v-if="showRule" class="mask" @click.self="showRule = false">
       <div class="game_rule_wrap">
         <div class="game_rule">
@@ -168,7 +214,7 @@ async function bet(color) {
             <p>1. Each round lasts a few minutes. Choose a colour (Green, Violet or Red) or a specific number.</p>
             <p>2. When the countdown ends, a winning number is drawn.</p>
             <p>3. Green and Red numbers pay 2x; Violet numbers pay more. Matching the exact number pays the most.</p>
-            <p>4. Entries cost ₹{{ round?.ticket ?? 1 }} and are settled to your balance automatically.</p>
+            <p>4. Entries cost ₹{{ amount }} and are settled to your balance automatically.</p>
             <p>Play responsibly. Bet only what you can afford.</p>
           </div>
         </div>
@@ -235,6 +281,14 @@ async function bet(color) {
 .game .game_tab .game_tab_item .game_tab_item_title { font-size: 14px; font-family: Roboto, Roboto-Medium; font-weight: 500; color: #b9b9b9; letter-spacing: 0px; }
 .game .game_tab .game_tab_item .game_tab_item_select { width: 14px; height: 6px; margin-top: 4px; background: #17273a; border-radius: 3px; }
 .game .game_tab .game_tab_item .tabselect { font-size: 16px; font-weight: 500; color: #17273a; }
+
+/* Records / My Orders list */
+.game .game_list { background: #fff; min-height: 80px; }
+.game .game_list_empty { text-align: center; color: #b9b9b9; font-size: 13px; padding: 24px 0; }
+.game .game_record { display: flex; align-items: center; padding: 12px 20px; border-bottom: .5px solid #ececec; font-size: 14px; }
+.game .game_record .game_record_period { color: #17273a; }
+.game .game_record .game_record_number { margin-left: auto; margin-right: 12px; font-weight: 700; color: #17273a; }
+.game .game_record .game_record_dot { width: 14px; height: 14px; border-radius: 50%; }
 
 /* Center the rule modal within the 375 frame (not the full viewport). */
 .mask { position: fixed; left: 50%; top: 0; transform: translateX(-50%); z-index: 99999; display: flex; align-items: center; justify-content: center; width: 100%; max-width: var(--maxw); height: 100vh; background: rgba(0,0,0,.6); }
