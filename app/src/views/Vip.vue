@@ -12,6 +12,21 @@ const tiers = ref([]);
 const picked = ref(null);
 const busy = ref(0);
 
+// Static derived content for the benefits grid + privileges list (no backend field for these).
+const benefits = [
+  { label: 'Daily bonus', icon: '/static/image/member/icon_goldcoins.png' },
+  { label: 'Cashback', icon: '/static/image/member/icon_Cash.png' },
+  { label: 'Red packets', icon: '/static/image/member/icon_redenvelope.png' },
+  { label: 'Higher win rate', icon: '/static/image/member/icon_winning.png' },
+  { label: 'Fast withdraw', icon: '/static/image/member/icon_Withdrawal.png' },
+];
+const privileges = [
+  'A fixed bonus credited to your balance every single day.',
+  'Increased referral rebate on all your team earnings.',
+  'Exclusive member-only lucky draws and prize pools.',
+  'Priority customer support whenever you need help.',
+];
+
 onMounted(async () => {
   tiers.value = (await api.vipTiers()).list;
   picked.value = tiers.value[1]?.id ?? tiers.value[0]?.id;
@@ -57,6 +72,48 @@ async function buy(tier) {
       </div>
     </div>
 
+    <!-- member detail: benefits grid + privileges + earnings table (real member_detail) -->
+    <div class="member_detailbg">
+      <div class="member_detail">
+        <div class="member_detail_title">
+          <div class="name">Member Benefits</div>
+          <div class="help"><img src="/static/image/member/icon_problem.png" alt="" /></div>
+        </div>
+
+        <div class="member_detail_strip">
+          <div v-for="b in benefits" :key="b.label" class="member_detail_strip_item">
+            <div class="icon"><img :src="b.icon" alt="" /></div>
+            <div class="info">{{ b.label }}</div>
+          </div>
+        </div>
+
+        <div class="member_detail_enjoy">
+          <div class="member_detail_enjoy_card">
+            <div class="title">Privileges you enjoy</div>
+            <div class="main m_bg">
+              <div v-for="(p, i) in privileges" :key="i" class="main_item">
+                <div class="main_item_icon"><img src="/static/image/member/icon_select.png" alt="" /></div>
+                <div class="main_item_des">{{ p }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="member_detail_invition">
+          <div class="member_detail_invition_item titlebg">
+            <div class="strip">Plan</div>
+            <div class="strip">Daily bonus</div>
+            <div class="strip">Rebate</div>
+          </div>
+          <div v-for="tier in tiers" :key="'row' + tier.id" class="member_detail_invition_item pricebg">
+            <div class="strip">{{ tier.name }}</div>
+            <div class="strip">₹{{ tier.dailyBonus }}</div>
+            <div class="strip">{{ tier.rebate }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="member_btnbar">
       <button class="member_btn" :disabled="busy" @click="buy(tiers.find((x) => x.id === picked))">{{ t('vip.buy') }}</button>
     </div>
@@ -85,6 +142,34 @@ async function buy(tier) {
 .member_open_card_item .price { font-size: 26px; font-weight: 700; margin: 2px 0; }
 .member_open_card_item .price small { font-size: 12px; font-weight: 400; }
 .member_open_card_item .detail { font-size: 13px; line-height: 18px; }
+/* member detail: benefits grid + privileges + earnings table */
+.member_detailbg { margin: 0 17px; }
+.member_detail { width: 100%; margin-top: -4px; padding: 18px 0 8px; background: #fff; position: relative; border-radius: 0 0 12px 12px; }
+.member_detail_title { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; }
+.member_detail_title .name { font-size: 16px; font-weight: 700; color: #a0743c; }
+.member_detail_title .help { width: 18px; height: 18px; }
+.member_detail_title .help img { width: 100%; height: 100%; object-fit: contain; }
+.member_detail_strip { margin-top: 20px; padding: 0 5px; display: flex; align-items: flex-start; justify-content: space-between; }
+.member_detail_strip_item { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.member_detail_strip_item .icon { width: 44px; height: 44px; }
+.member_detail_strip_item .icon img { width: 100%; height: 100%; object-fit: contain; }
+.member_detail_strip_item .info { margin-top: 5px; font-size: 12px; text-align: center; color: #a0743c; line-height: 1.3; }
+.member_detail_enjoy { margin-top: 18px; padding: 0 12px; }
+.member_detail_enjoy_card { width: 100%; border-radius: 10px; overflow: hidden; background: #2b2320; }
+.member_detail_enjoy_card .title { font-size: 14px; font-weight: 500; color: #f6deae; padding: 12px 0 0 16px; }
+.member_detail_enjoy_card .main.m_bg { color: #fff; padding: 12px 15px 16px 20px; margin-top: 10px; background: linear-gradient(180deg, #262932, #534f53 100%); border-radius: 0 0 10px 10px; }
+.member_detail_enjoy_card .main_item { display: flex; align-items: flex-start; justify-content: flex-start; padding: 7px 0; }
+.member_detail_enjoy_card .main_item_icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+.member_detail_enjoy_card .main_item_icon img { width: 100%; height: 100%; object-fit: contain; }
+.member_detail_enjoy_card .main_item_des { margin-left: 11px; font-size: 13px; font-weight: 500; color: #fff; line-height: 1.4; }
+.member_detail_invition { margin: 19px 10px 0; padding-bottom: 20px; }
+.member_detail_invition_item { display: flex; align-items: center; justify-content: flex-start; text-align: center; border-bottom: 1px solid #f4d8ab; }
+.member_detail_invition_item:last-child { border-bottom: none; }
+.member_detail_invition_item .strip { flex: 1; font-size: 14px; font-weight: 500; color: #a0743c; height: 44px; line-height: 44px; }
+.member_detail_invition_item .strip:nth-child(2) { border-left: 1px solid #f4d8ab; border-right: 1px solid #f4d8ab; }
+.member_detail_invition .titlebg { background: #f7e2c1; }
+.member_detail_invition .pricebg { background: #fcf9f0; }
+
 .member_btnbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: var(--maxw); padding: 10px 17px; background: #fff; border-top: 1px solid #f0f0f0; }
 .member_btn { width: 100%; height: 46px; border-radius: 23px; background: linear-gradient(89deg, #e7be76, #d79a3a); color: #5a3100; font-size: 16px; font-weight: 700; }
 .member_btn:disabled { opacity: 0.6; }
