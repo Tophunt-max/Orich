@@ -48,8 +48,8 @@ function toggle(i) { open.value = open.value === i ? -1 : i; }
         <div v-for="(f, i) in filtered" :key="f.id ?? i" class="u-collapse-item">
           <div class="help_main_item" @click="toggle(i)">
             <div class="help_main_item_icon">
-              <div class="help_main_item_icon_url"><img :src="faqIcon" alt="" /></div>
-              <div class="help_main_item_icon_title">Q{{ i + 1 }}</div>
+              <div class="help_main_item_icon_url"><img :src="f.icon || faqIcon" alt="" /></div>
+              <div class="help_main_item_icon_title">{{ f.category || ('Q' + (i + 1)) }}</div>
             </div>
             <div class="help_main_item_content">
               <div class="iconb">

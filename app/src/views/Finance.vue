@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { api } from '../api/client';
@@ -7,26 +7,13 @@ import { api } from '../api/client';
 const router = useRouter();
 const { t } = useI18n();
 const list = ref([]);
+// Recent-arrivals ticker, from the real backend feed (financeList().arrivals).
+const arrivals = ref([]);
 
-onMounted(async () => { list.value = (await api.financeList()).list; });
-
-// Recent-arrivals ticker (real .toast). No backend feed for this, so derive a rolling
-// list from the plan names with plausible payout amounts.
-const ARR_AVATARS = [
-  '/static/image/networkimg/abdul.png',
-  '/static/image/networkimg/babu.png',
-  '/static/image/networkimg/praveen.png',
-  '/static/image/networkimg/sultan.png',
-  '/static/image/networkimg/behrul-islam.png',
-];
-const ARR_NAMES = ['rahul***', 'meena***', 'arjun***', 'sana***', 'vikram***', 'neha***'];
-const arrivals = computed(() => {
-  const src = list.value.length ? list.value : [{ name: 'ORich Daily 7', rate: 0.8, min: 500 }];
-  return ARR_NAMES.map((name, i) => {
-    const f = src[i % src.length];
-    const earn = Math.round(Number(f.min || 500) * (Number(f.rate || 1) / 100) * 7);
-    return { name, avatar: ARR_AVATARS[i % ARR_AVATARS.length], plan: f.name, earn };
-  });
+onMounted(async () => {
+  const d = await api.financeList();
+  list.value = d.list || [];
+  arrivals.value = d.arrivals || [];
 });
 </script>
 
@@ -41,15 +28,15 @@ const arrivals = computed(() => {
     </div>
 
     <!-- recent arrivals ticker -->
-    <div class="toast">
+    <div v-if="arrivals.length" class="toast">
       <div class="toast-swiper">
         <div v-for="(a, i) in arrivals.slice(0, 1)" :key="i" class="toast-swiper-item">
           <div class="toast-swiper-item-img"><img :src="a.avatar" alt="" /></div>
           <div class="toast-swiper-item-main">
             <span class="uname">{{ a.name }}</span>
             <span class="arrival">just earned</span>
-            <span class="name">₹{{ a.earn }}</span>
-            <span class="arrival">from {{ a.plan }}</span>
+            <span class="name">₹{{ a.payout }}</span>
+            <span class="arrival">on ₹{{ a.amount }}</span>
           </div>
         </div>
       </div>

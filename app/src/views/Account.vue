@@ -27,17 +27,17 @@ const menu = [
   { icon: img + 'icon_Customerservice.png', label: 'account.service', to: '/service' },
 ];
 
-// Finance assets summary. The backend exposes no per-user finance totals yet, so these
-// are derived from the wallet balance / static placeholders — wire real data later.
+// Finance assets summary, from the real account finance totals (rupee strings).
 const financeTotal = ref('0.00');
 const financeEarn = ref('0.00');
 
 onMounted(async () => {
   user.value = await auth.refresh();
   try {
-    const d = await api.myFinance();
-    const list = d.list || [];
-    financeTotal.value = list.reduce((a, o) => a + Number(o.amount || 0), 0).toFixed(2);
+    const d = await api.account();
+    const finance = d.finance || {};
+    financeTotal.value = finance.invested ?? '0.00';
+    financeEarn.value = finance.earnings ?? '0.00';
   } catch { /* not logged in or none */ }
 });
 

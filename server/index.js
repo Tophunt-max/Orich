@@ -105,6 +105,9 @@ const userRoutes = {
       ],
       hot: s.products.filter((p) => p.hot).map(productView),
       list: s.products.map(productView),
+      highValue: [...s.products].sort((a, b) => b.marketValue - a.marketValue).slice(0, 4).map(productView),
+      categories: seed.categories,
+      finances: s.finances,
       winners: s.winners.slice(0, 5),
     });
   },
@@ -112,20 +115,15 @@ const userRoutes = {
   '/index/duobaoitemlistnew': () => ok({ list: store.get().products.map(productView) }),
   '/index/duobaoitemdetail': (b) => { const p = store.get().products.find((x) => x.id === Number(b.id)); return p ? ok({ item: productDetailView(p), joinPrices: [1, 5, 10, 20, 50, 100] }) : err('Product not found'); },
   '/index/winnerlist': () => ok({ list: store.get().winners }),
-  '/index/taskList': () => ok({ list: store.get().tasks }),
-  '/index/vip': () => ok({ list: store.get().vipTiers }),
+  '/index/taskList': (b, ctx) => ok({ list: store.get().tasks.map((t) => taskProgress(t, ctx && ctx.user && ctx.user.user)) }),
+  '/index/vip': () => ok({ list: store.get().vipTiers, benefits: seed.vipConfig.benefits, privileges: seed.vipConfig.privileges }),
   '/index/luckyList': () => ok({ list: store.get().luckyDraws }),
   '/index/luckyNow': () => ok({ list: store.get().luckyDraws }),
-  '/index/financeList': () => ok({ list: store.get().finances }),
-  '/index/financeDetail': (b) => { const f = store.get().finances.find((x) => x.id === Number(b.id)); return f ? ok({ item: f }) : err('Plan not found'); },
-  '/index/rechargelist': () => ok({ options: store.get().rechargeOptions }),
+  '/index/financeList': () => ok({ list: store.get().finances, arrivals: financeArrivals() }),
+  '/index/financeDetail': (b) => { const f = store.get().finances.find((x) => x.id === Number(b.id)); return f ? ok({ item: f, participants: financeParticipants(f.id), rules: seed.inviteRules }) : err('Plan not found'); },
+  '/index/rechargelist': () => ok({ options: store.get().rechargeOptions, channels: seed.payChannels }),
   '/index/systemservice': () => ok({ whatsapp: store.get().settings.service, email: 'support@orich.example' }),
-  '/index/help': () => ok({ list: [
-    { id: 1, q: 'How does a group-buy work?', a: 'Buy one or more shares of a product. When all shares sell, a winner is drawn and receives the product.' },
-    { id: 2, q: 'How do I recharge?', a: 'Open Account → Wallet → Recharge and pick an amount.' },
-    { id: 3, q: 'What is VIP?', a: 'A membership that pays a daily bonus and a higher referral rebate.' },
-    { id: 4, q: 'How do referrals pay out?', a: 'Share your invite code; you earn commission when invitees join.' },
-  ] }),
+  '/index/help': () => ok({ list: store.get().helpItems || seed.helpItems }),
 
   '/index/sendverify': (b) => {
     if (!/^\d{6,15}$/.test(String(b.phone || ''))) return err('Enter a valid phone number');
@@ -150,8 +148,8 @@ const userRoutes = {
   },
 
   '/index/logout': (b, ctx) => { delete sessions[ctx.user.token]; return ok({}, 'Logged out'); },
-  '/index/useraccount': (b, ctx) => ok({ user: userView(ctx.user.user) }),
-  '/index/userbalance': (b, ctx) => ok({ balance: rupees(ctx.user.user.balance), frozen: rupees(ctx.user.user.frozen) }),
+  '/index/useraccount': (b, ctx) => ok({ user: userView(ctx.user.user), finance: financeSummary(ctx.user.user.id) }),
+  '/index/userbalance': (b, ctx) => ok({ balance: rupees(ctx.user.user.balance), frozen: rupees(ctx.user.user.frozen), withdraw: seed.withdrawConfig }),
 
   '/index/addrechargepay2': (b, ctx) => {
     const amount = Math.round(Number(b.amount) * 100);
@@ -209,12 +207,12 @@ const userRoutes = {
 
   '/index/ordernews': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'join') }),
   '/index/userjoin': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'join') }),
-  '/index/myFinanceList': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'finance') }),
+  '/index/myFinanceList': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'finance').map(financeOrderView) }),
   '/index/luckyOrderList': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'lucky') }),
   '/index/mywinner': (b, ctx) => ok({ list: store.get().winners.slice(0, 2) }),
   '/index/usershare': (b, ctx) => ok({ list: store.get().winners.slice(0, 2) }),
-  '/index/myteam': (b, ctx) => ok({ count: ctx.user.user.teamCount, inviteCode: ctx.user.user.inviteCode, levels: [{ level: 1, members: 0, commission: '0.00' }, { level: 2, members: 0, commission: '0.00' }], list: [] }),
-  '/index/userinvitelist': (b, ctx) => ok({ inviteCode: ctx.user.user.inviteCode, list: [] }),
+  '/index/myteam': (b, ctx) => { const tm = teamOf(ctx.user.user); return ok({ count: tm.direct.length + tm.indirect.length, inviteCode: ctx.user.user.inviteCode, directCount: tm.direct.length, indirectCount: tm.indirect.length, directReward: tm.directReward, indirectReward: tm.indirectReward, levels: [{ level: 1, members: tm.direct.length, commission: tm.directReward }, { level: 2, members: tm.indirect.length, commission: tm.indirectReward }], list: tm.direct, indirect: tm.indirect }); },
+  '/index/userinvitelist': (b, ctx) => { const tm = teamOf(ctx.user.user); return ok({ inviteCode: ctx.user.user.inviteCode, rules: seed.inviteRules, list: tm.direct.concat(tm.indirect) }); },
 
   // Prizes & games (public lists)
   '/index/price': () => ok({ list: store.get().prizes }),
@@ -278,6 +276,66 @@ function addOrder(userId, type, extra) {
 }
 function ordersOf(userId, type) {
   return store.get().orders.filter((o) => o.userId === userId && o.type === type);
+}
+
+// --- data-wiring helpers (real values for the UI sections) ---
+const DAY = 864e5;
+function daysBetween(dateStr) {
+  const t = Date.parse(dateStr + 'T00:00:00Z');
+  return Number.isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / DAY)) : 0;
+}
+// Enrich a finance order with live progress / earnings based on its plan.
+function financeOrderView(o) {
+  const f = store.get().finances.find((x) => x.name === o.product);
+  const amount = Number(o.amount) || 0;
+  if (!f) return { ...o, progress: 0, earned: '0.00', daysLeft: 0, days: 0, rate: 0 };
+  const elapsed = Math.min(f.days, daysBetween(o.date) + 1);
+  const earned = (amount * (f.rate / 100) * elapsed).toFixed(2);
+  const progress = Math.round((elapsed / f.days) * 100);
+  return { ...o, progress, earned, daysLeft: Math.max(0, f.days - elapsed), days: f.days, rate: f.rate, matured: elapsed >= f.days };
+}
+function financeSummary(userId) {
+  const orders = ordersOf(userId, 'finance');
+  let invested = 0, earnings = 0;
+  for (const o of orders) { const v = financeOrderView(o); invested += Number(o.amount) || 0; earnings += Number(v.earned) || 0; }
+  return { invested: invested.toFixed(2), earnings: earnings.toFixed(2), count: orders.length };
+}
+// Recent "arrivals" ticker for the finance list (derived from seeded names, stable per day).
+function financeArrivals() {
+  const names = ['rahul', 'meena', 'arjun', 'sana', 'abdul', 'babu', 'praveen', 'sultan'];
+  const avs = ['networkimg/abdul.png', 'networkimg/babu.png', 'networkimg/praveen.png', 'networkimg/sultan.png', 'networkimg/user.png'];
+  return names.map((n, i) => ({ name: n + '***', avatar: store.img(avs[i % avs.length]), amount: ((i * 737 + 500) % 9000 + 1000).toString(), payout: (((i * 737 + 500) % 9000 + 1000) * 0.012).toFixed(2) }));
+}
+function financeParticipants(planId) {
+  const names = ['vikram', 'neha', 'rohit', 'priya', 'deepak', 'anjali'];
+  const avs = ['networkimg/abdul.png', 'networkimg/babu.png', 'networkimg/praveen.png', 'networkimg/sultan.png'];
+  return names.map((n, i) => ({ name: n + '***', avatar: store.img(avs[(planId + i) % avs.length]), amount: (((planId * 13 + i * 29) % 40 + 5) * 1000).toString(), time: new Date(Date.now() - (i + 1) * 5 * 3600e3).toISOString().slice(0, 16).replace('T', ' ') }));
+}
+// Per-task progress for the Tasks page (uses the user's real orders when signed in).
+function taskProgress(t, user) {
+  let done = 0;
+  if (user) {
+    const mine = store.get().orders.filter((o) => o.userId === user.id);
+    if (t.type === 'join') done = mine.filter((o) => o.type === 'join').length;
+    else if (t.type === 'recharge') done = mine.filter((o) => o.type === 'recharge').length;
+    else if (t.type === 'invite') done = teamOf(user).direct.length;
+    else if (t.type === 'checkin') done = mine.some((o) => o.type === 'task' && o.date === new Date().toISOString().slice(0, 10)) ? 1 : 0;
+  }
+  const target = t.target || 1;
+  return { ...t, progress: Math.min(target, done), target, done: done >= target };
+}
+// Direct + indirect referrals of a user (by invite code chain).
+function teamOf(user) {
+  const s = store.get();
+  const direct = s.users.filter((u) => u.invitedBy && u.invitedBy === user.inviteCode);
+  const directCodes = new Set(direct.map((u) => u.inviteCode));
+  const indirect = s.users.filter((u) => u.invitedBy && directCodes.has(u.invitedBy));
+  const reward = (arr, rate) => arr.reduce((a, u) => a + (s.orders.filter((o) => o.userId === u.id && (o.type === 'join' || o.type === 'recharge')).reduce((x, o) => x + Number(o.amount) || 0, 0)) * rate, 0);
+  const view = (u) => ({ id: u.id, name: (u.nickname || ('ORich' + String(u.phone).slice(-4))), avatar: u.avatar, phone: String(u.phone).replace(/(\d{2})\d+(\d{2})/, '$1****$2'), date: new Date(u.createdAt).toISOString().slice(0, 10), vip: !!u.vip });
+  return {
+    direct: direct.map(view), indirect: indirect.map(view),
+    directReward: reward(direct, 0.08).toFixed(2), indirectReward: reward(indirect, 0.03).toFixed(2),
+  };
 }
 
 const USER_AUTH = new Set(['/index/useraccount', '/index/userbalance', '/index/addrechargepay2', '/index/addorder',

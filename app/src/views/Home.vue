@@ -8,32 +8,35 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const data = ref(null);
 const loading = ref(true);
-const finances = ref([]);
 const showDownload = ref(true);
 
-// category tabs for the bottom list (derived client-side; no category field on the API yet)
-const cats = ['All', 'Hot', 'Ending soon'];
+// category tabs for the bottom list come from the API (data.categories).
+const cats = computed(() => (data.value?.categories || []));
 const activeCat = ref(0);
 const priceAsc = ref(false);
 
 const listAll = computed(() => (data.value?.list || []));
 const hotList = computed(() => listAll.value.filter((p) => p.hot));
-const highList = computed(() =>
-  [...listAll.value].sort((a, b) => b.marketValue - a.marketValue).slice(0, 6));
+// "High value" section cards come from the API (data.highValue).
+const highList = computed(() => (data.value?.highValue || []));
+// Finance carousel cards come from the home response (data.finances).
+const finances = computed(() => (data.value?.finances || []));
 const bottomList = computed(() => {
   let arr = [...listAll.value];
-  if (activeCat.value === 1) arr = arr.filter((p) => p.hot);
-  else if (activeCat.value === 2) arr = arr.filter((p) => p.percent >= 50);
+  const cat = cats.value[activeCat.value];
+  if (cat && cat !== 'All') arr = arr.filter((p) => p.category === cat);
   arr.sort((a, b) => (priceAsc.value ? a.price - b.price : b.price - a.price));
   return arr;
 });
 
-// A lightweight countdown for the "High value" header (static end time for display only).
-const remain = ref(6 * 3600 + 42 * 60 + 15);
+// Countdown for the "High value" header, driven by the first high-value item's real endAt.
+const now = ref(Date.now());
 let timer = null;
-const hh = computed(() => String(Math.floor(remain.value / 3600) % 24).padStart(2, '0'));
-const mm = computed(() => String(Math.floor(remain.value / 60) % 60).padStart(2, '0'));
-const ss = computed(() => String(remain.value % 60).padStart(2, '0'));
+const highEndAt = computed(() => highList.value[0]?.endAt || 0);
+const remainSec = computed(() => Math.max(0, Math.floor((highEndAt.value - now.value) / 1000)));
+const hh = computed(() => String(Math.floor(remainSec.value / 3600)).padStart(2, '0'));
+const mm = computed(() => String(Math.floor(remainSec.value / 60) % 60).padStart(2, '0'));
+const ss = computed(() => String(remainSec.value % 60).padStart(2, '0'));
 
 function toggleLang() {
   locale.value = locale.value === 'en' ? 'hi' : 'en';
@@ -47,9 +50,8 @@ function go(key) {
 onMounted(async () => {
   try {
     data.value = await api.home();
-    try { finances.value = (await api.financeList()).list || []; } catch { /* optional */ }
   } finally { loading.value = false; }
-  timer = setInterval(() => { if (remain.value > 0) remain.value--; else remain.value = 6 * 3600; }, 1000);
+  timer = setInterval(() => { now.value = Date.now(); }, 1000);
 });
 onUnmounted(() => { if (timer) clearInterval(timer); });
 

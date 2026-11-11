@@ -11,18 +11,24 @@ const { toast } = useToast();
 const list = ref([]);
 const done = ref({});
 
-onMounted(async () => { list.value = (await api.tasks()).list; await auth.refresh(); });
+onMounted(async () => { list.value = (await api.tasks()).list || []; await auth.refresh(); });
 
-// Split the backend task list into the simple daily-welfare list (check-in style) and
-// the richer "missions" group that the real page renders with progress + an image card.
-const welfare = computed(() => list.value.filter((x) => x.type === 'checkin'));
-const missions = computed(() => list.value.filter((x) => x.type !== 'checkin'));
+// Split the backend task list using the real `group` field: the simple daily-welfare
+// list (group==='daily') and the richer "missions" group (group==='mission') that the
+// real page renders with progress + an image card.
+const welfare = computed(() => list.value.filter((x) => x.group === 'daily'));
+const missions = computed(() => list.value.filter((x) => x.group === 'mission'));
 
-// Progress is not returned by the backend, so derive a simple target per mission type.
-const PROGRESS = { join: { cur: 0, total: 1 }, invite: { cur: 0, total: 3 }, recharge: { cur: 0, total: 1 } };
+// A task is in the claimed/received state when the backend marks it done, or once the
+// user has just claimed it in this session.
+function isDone(task) {
+  return done.value[task.id] || task.done === true;
+}
+// Progress ring/bar is driven by the real `progress` (0..target) / `target` fields.
 function prog(task) {
-  const p = PROGRESS[task.type] || { cur: 0, total: 1 };
-  return done.value[task.id] ? { cur: p.total, total: p.total } : p;
+  const total = Number(task.target) || 1;
+  const cur = isDone(task) ? total : Math.min(Number(task.progress) || 0, total);
+  return { cur, total };
 }
 
 async function receive(task) {
@@ -60,8 +66,8 @@ async function receive(task) {
               <div class="name">{{ task.title }}</div>
               <div class="tip">+₹{{ task.reward }}</div>
             </div>
-            <button class="task_main_welfare_strip_btn" :class="{ done: done[task.id] }" :disabled="done[task.id]" @click="receive(task)">
-              {{ done[task.id] ? t('task.claimed') : t('task.claim') }}
+            <button class="task_main_welfare_strip_btn" :class="{ done: isDone(task) }" :disabled="isDone(task)" @click="receive(task)">
+              {{ isDone(task) ? t('task.claimed') : t('task.claim') }}
             </button>
           </div>
         </div>
@@ -94,10 +100,10 @@ async function receive(task) {
             </div>
             <button
               class="taskbtn"
-              :class="done[task.id] ? 'btn_gray' : 'btnbj_receive'"
-              :disabled="done[task.id]"
+              :class="isDone(task) ? 'btn_gray' : 'btnbj_receive'"
+              :disabled="isDone(task)"
               @click="receive(task)"
-            >{{ done[task.id] ? t('task.claimed') : t('task.claim') }}</button>
+            >{{ isDone(task) ? t('task.claimed') : t('task.claim') }}</button>
           </div>
         </div>
         <div v-if="!missions.length" class="empty">No missions available</div>

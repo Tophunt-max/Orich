@@ -13,12 +13,16 @@ const amount = ref('');
 const banks = ref([]);
 const picked = ref(0);
 const busy = ref(false);
+// Real withdrawal rules (fee / min / arrival) from api.balance().withdraw.
+const withdraw = ref(null);
 
 const balance = computed(() => auth.user?.balance ?? '0.00');
 const selectedBank = computed(() => banks.value[picked.value] || null);
+const minWithdraw = computed(() => Number(withdraw.value?.min ?? 100));
 
 onMounted(async () => {
   await auth.refresh();
+  try { withdraw.value = (await api.balance()).withdraw || null; } catch (e) { toast(e.message); }
   try { banks.value = (await api.bankList()).list || []; } catch (e) { toast(e.message); }
 });
 
@@ -34,7 +38,7 @@ function all() { amount.value = String(balance.value); }
 
 async function submit() {
   const v = Number(amount.value);
-  if (!v || v < 100) return toast('Minimum withdrawal is ₹100');
+  if (!v || v < minWithdraw.value) return toast('Minimum withdrawal is ₹' + minWithdraw.value);
   if (v > Number(balance.value)) return toast('Amount exceeds available balance');
   if (!selectedBank.value) return toast('Add a bank / UPI account first');
   busy.value = true;
@@ -72,7 +76,7 @@ async function submit() {
       <!-- amount input -->
       <div class="cashout_main_amount">Withdrawal amount <span>(₹)</span></div>
       <div class="cashout_main_money">
-        ₹<input v-model="amount" type="number" min="100" placeholder="0" />
+        ₹<input v-model="amount" type="number" :min="minWithdraw" placeholder="0" />
       </div>
 
       <!-- available balance -->
@@ -87,9 +91,9 @@ async function submit() {
     <!-- fee / arrival info -->
     <div class="cashout_tip">
       <div class="cashout_tip_title">Instructions</div>
-      <div class="cashout_tip_item">1. Minimum withdrawal amount is ₹100 per request.</div>
-      <div class="cashout_tip_item">2. A processing fee may be deducted as per your account tier.</div>
-      <div class="cashout_tip_item">3. Funds usually arrive within 24 hours on working days.</div>
+      <div class="cashout_tip_item">1. Minimum withdrawal amount is ₹{{ minWithdraw }} per request.</div>
+      <div v-if="withdraw?.feePercent != null" class="cashout_tip_item">2. Fee: {{ withdraw.feePercent }}% is deducted from each withdrawal.</div>
+      <div v-if="withdraw?.arrival" class="cashout_tip_item">3. Arrives in {{ withdraw.arrival }}.</div>
       <div class="cashout_tip_item">4. Make sure your bank / UPI details are correct before submitting.</div>
     </div>
   </div>

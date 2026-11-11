@@ -26,25 +26,15 @@ const canBuy = computed(() => {
   return a >= item.value.min && a <= item.value.max;
 });
 
-// Derived participant feed (no backend field for buyers of a plan).
-const AV = ['abdul', 'babu', 'praveen', 'sultan', 'behrul-islam'];
-const NM = ['rahul***', 'meena***', 'arjun***', 'sana***', 'vikram***', 'neha***'];
-const participants = computed(() => {
-  if (!item.value) return [];
-  return NM.map((name, i) => {
-    const amt = item.value.min * ((i % 4) + 1);
-    return {
-      name,
-      avatar: '/static/image/networkimg/' + AV[i % AV.length] + '.png',
-      time: ['2m', '9m', '27m', '1h', '3h', '6h'][i] + ' ago',
-      amount: amt,
-      earn: (amt * (item.value.rate / 100) * item.value.days).toFixed(2),
-    };
-  });
-});
+// Participant feed and rules come from the real backend response.
+const participants = ref([]);
+const rules = ref([]);
 
 onMounted(async () => {
-  item.value = (await api.finance(route.params.id)).item;
+  const d = await api.finance(route.params.id);
+  item.value = d.item;
+  participants.value = d.participants || [];
+  rules.value = d.rules || [];
   amount.value = item.value.min;
   auth.refresh();
 });
@@ -119,17 +109,14 @@ async function invest() {
               <div class="time">{{ p.time }}</div>
             </div>
             <div class="fdetail_part_main_item_user_buyin">
-              Invested ₹{{ p.amount }}<span class="earn">+₹{{ p.earn }}</span>
+              Invested ₹{{ p.amount }}
             </div>
           </div>
         </div>
       </div>
 
       <div v-else class="fdetail_part_html">
-        <p>1. Returns are credited daily at {{ item.rate }}% of your invested amount.</p>
-        <p>2. Your principal is locked for {{ item.days }} days and returned in full on maturity.</p>
-        <p>3. Minimum investment is ₹{{ item.min }}, maximum is ₹{{ item.max }}.</p>
-        <p>4. Earnings and principal are settled to your wallet automatically.</p>
+        <p v-for="(r, i) in rules" :key="i">{{ r }}</p>
       </div>
     </div>
 
