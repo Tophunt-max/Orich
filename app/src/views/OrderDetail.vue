@@ -9,11 +9,51 @@ const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
 const o = ref(null);
+const afsCount = ref(0);
+const sharing = ref(false);
+const applying = ref(false);
 
 onMounted(async () => {
   try { o.value = (await api.orderDetail(route.params.id)).order; }
   catch (e) { toast(e.message); }
+  // Optional: surface how many after-sales requests the user already has.
+  try {
+    const r = await api.afsList();
+    afsCount.value = (r?.list || []).length;
+  } catch { /* not logged in or none; leave at 0 */ }
 });
+
+async function share() {
+  if (!o.value || sharing.value) return;
+  sharing.value = true;
+  try {
+    const data = await api.orderShare(o.value.id);
+    const link = data?.link || '';
+    if (link && navigator.clipboard?.writeText) {
+      try { await navigator.clipboard.writeText(link); } catch { /* clipboard blocked */ }
+      toast('Share link copied');
+    } else if (link) {
+      toast(link);
+    } else {
+      toast('Share link unavailable');
+    }
+  } catch (e) { toast(e.message); }
+  finally { sharing.value = false; }
+}
+
+async function applyAfs() {
+  if (!o.value || applying.value) return;
+  applying.value = true;
+  try {
+    const data = await api.afsEdit(o.value.id, 'apply');
+    toast(data?.msg || 'After-sales request submitted');
+    try {
+      const r = await api.afsList();
+      afsCount.value = (r?.list || []).length;
+    } catch { /* ignore refresh error */ }
+  } catch (e) { toast(e.message); }
+  finally { applying.value = false; }
+}
 
 // Shipping address is only present on orders that ship a physical prize; the
 // orderDetail response may omit it, so the block is rendered only when present.
@@ -102,6 +142,10 @@ const isWon = computed(() => ['success', 'rewarded', 'won'].includes(o.value?.st
     </div>
 
     <div class="detail_append">
+      <button v-if="o" class="detail_append_btn ghost" :disabled="sharing" @click="share">Share</button>
+      <button v-if="o" class="detail_append_btn ghost" :disabled="applying" @click="applyAfs">
+        Apply for refund<span v-if="afsCount" class="afs_badge">{{ afsCount }}</span>
+      </button>
       <button class="detail_append_btn" @click="router.back()">Back</button>
     </div>
   </div>
@@ -137,6 +181,9 @@ const isWon = computed(() => ['success', 'rewarded', 'won'].includes(o.value?.st
 .detail_main .detail_main_info_mation_line .lingmrlr6 { margin: 0 3px; }
 .detail_main .border { margin: 10px 0; border-bottom: 1px solid #f3f3f4; }
 .detail_foot { background: #f9f9f9; width: 100%; height: 100px; }
-.detail_append { width: 100%; padding: 5px 0; position: fixed; left: 50%; transform: translateX(-50%); max-width: var(--maxw); bottom: 0; height: 49px; background-color: #fff; box-shadow: 0px 2px 12px 0px rgba(0, 0, 0, .1); display: flex; align-items: center; justify-content: center; }
-.detail_append .detail_append_btn { width: 300px; height: 39px; border-radius: 20px; background: #ee5016; color: #fff; font-size: 15px; font-weight: 700; }
+.detail_append { width: 100%; padding: 5px 10px; position: fixed; left: 50%; transform: translateX(-50%); max-width: var(--maxw); bottom: 0; min-height: 49px; background-color: #fff; box-shadow: 0px 2px 12px 0px rgba(0, 0, 0, .1); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.detail_append .detail_append_btn { flex: 1; max-width: 300px; height: 39px; border-radius: 20px; background: #ee5016; color: #fff; font-size: 15px; font-weight: 700; }
+.detail_append .detail_append_btn:disabled { opacity: .6; }
+.detail_append .detail_append_btn.ghost { background: #fff; border: 1px solid #ee5016; color: #ee5016; }
+.detail_append .detail_append_btn .afs_badge { display: inline-block; margin-left: 6px; min-width: 16px; padding: 0 4px; height: 16px; line-height: 16px; border-radius: 8px; background: #ff5c5c; color: #fff; font-size: 11px; vertical-align: middle; }
 </style>

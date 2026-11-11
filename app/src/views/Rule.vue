@@ -1,7 +1,9 @@
 <script setup>
+import { onMounted, ref } from 'vue';
 import NavBar from '../components/NavBar.vue';
+import { api } from '../api/client';
 
-const paragraphs = [
+const staticParagraphs = [
   '1. Each product round requires a fixed number of shares to sell out before a draw takes place.',
   '2. You may buy one or more shares in a round; every share you hold is assigned its own lucky code.',
   '3. Once all shares in a round are sold, a winning code is drawn transparently from every issued code.',
@@ -11,12 +13,29 @@ const paragraphs = [
   '7. Invite friends with your referral code to build a team and earn commission on their activity.',
   '8. ORich reserves the right to adjust rules and reward rates; the latest version always applies.',
 ];
+
+const title = ref('Rules');
+const paragraphs = ref(staticParagraphs);
+
+onMounted(async () => {
+  try {
+    const r = await api.ruleText();
+    if (r?.title) title.value = r.title;
+    const parts = String(r?.content || '')
+      .split('\n')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (parts.length) paragraphs.value = parts;
+  } catch {
+    // Keep the static fallback text if the call fails.
+  }
+});
 </script>
 
 <!-- Faithful rebuild of the real pages/richtext/rule layout + scoped CSS. -->
 <template>
   <div>
-    <NavBar title="Rules" />
+    <NavBar :title="title" />
     <div class="detail">
       <div class="text">
         <p v-for="(p, i) in paragraphs" :key="i">{{ p }}</p>

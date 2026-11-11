@@ -12,6 +12,7 @@ const wantedLevel = computed(() => (level.value === 'indirect' ? 2 : 1));
 
 const teamData = ref(null);
 const inviteData = ref(null);
+const rebates = ref([]);
 const avatarFallback = '/static/image/home/icon_multiuser.png';
 
 const summary = computed(() =>
@@ -27,6 +28,7 @@ const members = computed(() => {
 onMounted(async () => {
   try { teamData.value = await api.team(); } catch { /* ignore */ }
   try { inviteData.value = await api.invite(); } catch { /* ignore */ }
+  try { const r = await api.rebateList(); rebates.value = r?.list || []; } catch { /* ignore */ }
 });
 
 function switchLevel(l) {
@@ -96,6 +98,26 @@ function switchLevel(l) {
         <div v-else class="detail_empty">No members at this level yet</div>
       </div>
     </div>
+
+    <!-- Commission records (api.rebateList) -->
+    <div class="rebate">
+      <div class="rebate_head">Commission records</div>
+      <div class="rebate_list">
+        <template v-if="rebates.length">
+          <div v-for="(r, i) in rebates" :key="i" class="rebate_item">
+            <div class="rebate_item_left">
+              <div class="rebate_item_name">{{ r.name || 'Member' }}</div>
+              <div class="rebate_item_meta">
+                <span class="rebate_badge" :class="(r.level === 'Indirect') ? 'indirect' : 'direct'">{{ r.level || 'Direct' }}</span>
+                <span class="rebate_date">{{ r.date || '' }}</span>
+              </div>
+            </div>
+            <div class="rebate_item_amount">+₹{{ r.amount ?? '0.00' }}</div>
+          </div>
+        </template>
+        <div v-else class="detail_empty">No commission records yet</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -128,4 +150,17 @@ function switchLevel(l) {
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_count .detail_list_content_item_count_tab { display: flex; align-items: center; justify-content: center; flex-direction: column; font-size: 14px; font-family: Roboto, Roboto-Medium; font-weight: 500; color: #17273a; letter-spacing: 0px; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_count .detail_list_content_item_count_tab .money { margin-top: 5px; color: #ff5c5c; }
 .detail .detail_tab .detail_list_content .detail_empty { padding: 40px 0; text-align: center; color: #b9b9b9; font-size: 13px; }
+
+.detail .rebate { margin-top: 12px; background-color: #fff; }
+.detail .rebate .rebate_head { padding: 15px 15px 0; font-size: 15px; font-family: Roboto, Roboto-Bold; font-weight: 700; color: #17273a; }
+.detail .rebate .rebate_list { padding: 0 15px; }
+.detail .rebate .rebate_item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f9f9f9; }
+.detail .rebate .rebate_item .rebate_item_name { font-size: 14px; font-family: Roboto, Roboto-Medium; font-weight: 500; color: #17273a; }
+.detail .rebate .rebate_item .rebate_item_meta { margin-top: 7px; display: flex; align-items: center; }
+.detail .rebate .rebate_item .rebate_badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.detail .rebate .rebate_item .rebate_badge.direct { background: #ffe6e2; color: #fc573b; }
+.detail .rebate .rebate_item .rebate_badge.indirect { background: #e7f0ff; color: #4a85e8; }
+.detail .rebate .rebate_item .rebate_date { margin-left: 10px; font-size: 13px; font-family: Roboto, Roboto-Regular; font-weight: 400; color: #b9b9b9; }
+.detail .rebate .rebate_item .rebate_item_amount { font-size: 15px; font-family: Roboto, Roboto-Medium; font-weight: 700; color: #ff5c5c; white-space: nowrap; }
+.detail .rebate .detail_empty { padding: 40px 0; text-align: center; color: #b9b9b9; font-size: 13px; }
 </style>
