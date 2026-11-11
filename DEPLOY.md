@@ -66,23 +66,31 @@ To lock it down, replace `*` with your Pages domain in `server/index.js`
 
 ---
 
-## Option B: Everything on Cloudflare (backend → Worker + D1/KV)
+## Option B: Everything on Cloudflare (Worker + KV) — READY
 
-If you want it 100% on Cloudflare, the backend must be re-implemented as a
-**Cloudflare Worker** (a `fetch(request, env)` handler) with storage moved from
-`server/data/state.json` to **D1** (SQLite) or **KV**:
+This is **already implemented** in [`worker/`](worker/). One Cloudflare Worker serves
+the API **and** the static app + admin, with state in a single **KV** document. It
+reuses the exact same logic as the Node server (`server/core.js`) — only the store
+(fs → KV) and transport (http → `fetch`) differ.
 
-1. Create the Worker: `npm create cloudflare@latest orich-api` and add a `wrangler.toml`.
-2. Move the route table from `server/index.js` into the Worker's `fetch` handler
-   (the request/response shapes stay identical: `POST /api/index/*`, `{code,msg,data}`).
-3. Replace `store.js` (fs read/write) with D1 queries or a KV document:
-   - D1: `wrangler d1 create orich` then persist each collection in tables.
-   - KV: store the whole state blob under one key (simplest port of the current model).
-4. Deploy: `wrangler deploy`. Point the Pages apps' `VITE_API_BASE` /
-   `VITE_ADMIN_API` at the Worker URL (same-origin via a `/api` route, or a
-   separate subdomain).
+```bash
+cd worker
+npm install
+npx wrangler login
+npx wrangler kv namespace create ORICH_KV   # paste the id into wrangler.toml
+npm run deploy                              # builds app+admin → ./public, then deploys
+```
 
-This is a focused porting task (logic reuses cleanly; only persistence changes).
+Result (one origin):
+- `/`            → user app
+- `/admin`       → admin panel
+- `/api/*`       → user API
+- `/admin/api/*` → admin API
+
+Hardening: `npx wrangler secret put ORICH_HIDE_OTP` (=`1`), `ADMIN_USER`, `ADMIN_PASS`.
+
+See [`worker/README.md`](worker/README.md) for details and limits (KV write rate,
+uploads → R2, or switch the store to a Durable Object / D1 for heavy concurrency).
 
 ---
 

@@ -1,70 +1,37 @@
 'use strict';
-// Mutable, disk-persisted app state. Seeded once from db.js, then edited at runtime
-// by both the user API (joins, recharges) and the admin API (CRUD). Saved to
-// data/state.json so admin changes survive restarts and show up in the user app.
+// Node (filesystem) store. Seeded once from state.js, persisted to data/state.json.
 const fs = require('fs');
 const path = require('path');
 const seed = require('./db');
+const freshState = require('./state');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const FILE = path.join(DATA_DIR, 'state.json');
-
-function freshState() {
-  return {
-    products: seed.products.map((p) => ({ ...p })),
-    winners: seed.winners.map((w) => ({ ...w })),
-    finances: seed.finances.map((f) => ({ ...f })),
-    tasks: seed.tasks.map((t) => ({ ...t })),
-    vipTiers: seed.vipTiers.map((v) => ({ ...v })),
-    luckyDraws: seed.luckyDraws.map((l) => ({ ...l })),
-    prizes: seed.prizes.map((p) => ({ ...p })),
-    games: seed.games.map((g) => ({ ...g })),
-    helpItems: seed.helpItems.map((h) => ({ ...h })),
-    notifications: seed.notifications.map((n) => ({ ...n })),
-    events: [],   // analytics events (AppsFlyer/Firebase parity)
-    rechargeOptions: [...seed.rechargeOptions],
-    settings: {
-      name: 'ORich',
-      notice: 'Lucky draw for iPhone 15 Pro Max closes soon — join now!',
-      service: 'https://wa.me/910000000000',
-      tabBarColor: '#17273a',
-      tabBarActive: '#de6436',
-      withdrawFee: seed.withdrawConfig.feePercent,
-      withdrawMin: seed.withdrawConfig.min,
-      withdrawArrival: seed.withdrawConfig.arrival,
-    },
-    users: [],   // { id, phone, nickname, avatar, balance, frozen, inviteCode, teamCount, invitedBy, createdAt }
-    orders: [],  // { id, userId, type, product, shares, amount, status, date }
-    admins: [{ username: process.env.ADMIN_USER || 'admin', password: process.env.ADMIN_PASS || 'admin123', name: 'Administrator' }],
-    seq: { user: 0, order: 0, product: seed.products.length, winner: 200, finance: seed.finances.length, vip: seed.vipTiers.length, lucky: seed.luckyDraws.length },
-  };
-}
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 
 let state;
 function load() {
-  try {
-    state = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-  } catch {
-    state = freshState();
-    save();
-  }
+  try { state = JSON.parse(fs.readFileSync(FILE, 'utf8')); }
+  catch { state = freshState(seed); save(); }
   return state;
 }
-
 function save() {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(FILE, JSON.stringify(state, null, 2));
-  } catch (e) {
-    console.error('state save failed:', e.message);
-  }
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(state, null, 2)); }
+  catch (e) { console.error('state save failed:', e.message); }
 }
+function nextId(kind) { state.seq[kind] = (state.seq[kind] || 0) + 1; return state.seq[kind]; }
 
-function nextId(kind) {
-  state.seq[kind] = (state.seq[kind] || 0) + 1;
-  return state.seq[kind];
+// Persist an uploaded image (data URL) to disk, return its served path.
+function saveUpload(dataUrl) {
+  const m = /^data:(image\/[\w+]+);base64,(.+)$/.exec(dataUrl || '');
+  if (!m) return null;
+  const ext = (m[1].split('/')[1] || 'png').replace('+xml', '');
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const name = 'up_' + Date.now() + Math.random().toString(36).slice(2, 7) + '.' + ext;
+  fs.writeFileSync(path.join(UPLOAD_DIR, name), Buffer.from(m[2], 'base64'));
+  return '/uploads/' + name;
 }
 
 load();
 
-module.exports = { get: () => state, save, nextId, reset: () => { state = freshState(); save(); }, img: seed.img };
+module.exports = { get: () => state, save, nextId, reset: () => { state = freshState(seed); save(); }, img: seed.img, saveUpload };
