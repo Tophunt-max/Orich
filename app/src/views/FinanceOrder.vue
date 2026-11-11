@@ -6,14 +6,19 @@ import { useToast } from '../components/useToast';
 
 const { toast } = useToast();
 const list = ref([]);
+const tab = ref('active'); // active | done
 
 onMounted(async () => {
   try { list.value = ((await api.myFinance()).list || []).slice().reverse(); }
   catch (e) { toast(e.message); }
 });
 
+const isActive = (o) => String(o.status || '').toLowerCase() === 'active';
+const shown = computed(() => list.value.filter((o) => (tab.value === 'active' ? isActive(o) : !isActive(o))));
 const total = computed(() => list.value.reduce((s, o) => s + Number(o.amount || 0), 0).toFixed(2));
 const count = computed(() => list.value.length);
+// Progress not returned by backend; derive a cosmetic value (active orders mid-term, else full).
+const progOf = (o) => (isActive(o) ? 45 : 100);
 </script>
 
 <!-- Faithful rebuild of the real pages/finance/order (.order) + scoped CSS. -->
@@ -38,18 +43,23 @@ const count = computed(() => list.value.length);
 
     <div class="order_list">
       <div class="order_list_tab">
-        <div class="order_list_tab_item">
-          <div class="name active">All orders</div>
+        <div class="order_list_tab_item" @click="tab = 'active'">
+          <div :class="tab === 'active' ? 'active' : 'name'">In Progress</div>
+          <div v-if="tab === 'active'" class="img"></div>
+        </div>
+        <div class="order_list_tab_item" @click="tab = 'done'">
+          <div :class="tab === 'done' ? 'active' : 'name'">Completed</div>
+          <div v-if="tab === 'done'" class="img"></div>
         </div>
       </div>
 
-      <div v-if="!list.length" class="empty2">
-        <img src="/static/image/nodata.png" alt="" />
-        <div>No investments yet</div>
+      <div v-if="!shown.length" class="empty2">
+        <img src="/static/image/nodata.png" alt="" onerror="this.style.display='none'" />
+        <div>{{ tab === 'active' ? 'No active investments' : 'No completed investments' }}</div>
       </div>
 
       <div class="order_list_card">
-        <div v-for="o in list" :key="o.id" class="order_list_card_item">
+        <div v-for="o in shown" :key="o.id" class="order_list_card_item">
           <div class="order_list_card_item_title">{{ o.product }}</div>
           <div class="order_list_card_item_total">
             <div class="order_list_card_item_total_strip">
@@ -60,6 +70,11 @@ const count = computed(() => list.value.length);
               <div class="title">Status</div>
               <div class="number endin">{{ o.status }}</div>
             </div>
+          </div>
+          <div class="order_list_card_item_pro">
+            <div class="order_list_card_item_pro_title">Progress</div>
+            <div class="order_list_card_item_pro_gress"><span :style="{ width: progOf(o) + '%' }"></span></div>
+            <div class="order_list_card_item_pro_num">{{ progOf(o) }}%</div>
           </div>
           <div class="order_list_card_item_pro mr_top36">
             <div class="order_list_card_item_pro_title">Date</div>
@@ -93,8 +108,14 @@ const count = computed(() => list.value.length);
 .order .order_list .order_list_card .order_list_card_item .order_list_card_item_total .order_list_card_item_total_strip .title { color: #b9b9b9; }
 .order .order_list .order_list_card .order_list_card_item .order_list_card_item_total .order_list_card_item_total_strip .number { margin-top: 8px; color: #ff5c5c; font-weight: 700; max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .order .order_list .order_list_card .order_list_card_item .order_list_card_item_pro { margin-top: 12px; font-size: 14px; font-family: Roboto, Roboto-Regular; font-weight: 400; color: #b9b9b9; letter-spacing: 0px; display: flex; align-items: center; justify-content: flex-start; }
+.order .order_list .order_list_tab .order_list_tab_item .img { width: 17px; height: 3px; border-radius: 2px; background: #ee5016; margin: 2px auto 0; }
 .order .order_list .order_list_card .order_list_card_item .order_list_card_item_pro .order_list_card_item_pro_title { flex-shrink: 0; }
+.order .order_list .order_list_card .order_list_card_item .order_list_card_item_pro .order_list_card_item_pro_gress { margin-left: 6px; margin-right: 12px; width: 100%; height: 6px; border-radius: 6px; background: #f0e3dc; overflow: hidden; }
+.order .order_list .order_list_card .order_list_card_item .order_list_card_item_pro .order_list_card_item_pro_gress span { display: block; height: 100%; background: linear-gradient(115deg, #ffe44b, #fea326); }
+.order .order_list .order_list_card .order_list_card_item .order_list_card_item_pro .order_list_card_item_pro_num { flex-shrink: 0; color: #ee5016; }
 .order .order_list .order_list_card .order_list_card_item .order_list_card_item_pro .order_list_card_item_pro_time { margin-left: 7px; }
 .order .order_list .order_list_card .order_list_card_item .endin { color: #ee5016; }
 .order .order_list .order_list_card .order_list_card_item .mr_top36 { margin-top: 18px; }
+.empty2 { text-align: center; padding: 40px 0; color: #b9b9b9; font-size: 14px; }
+.empty2 img { width: 120px; margin: 0 auto 10px; display: block; }
 </style>
