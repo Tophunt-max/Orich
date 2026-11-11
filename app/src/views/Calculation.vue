@@ -1,5 +1,52 @@
 <script setup>
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
+
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: {
+    navTitle: 'Winning Calculation',
+    algTitle: 'Winning algorithm',
+    algText1: '(Sum of all participation numbers + value of the last participation) ÷ total shares',
+    algText2: 'The remainder decides the lucky winning number.',
+    intro: 'When a group buy is fully subscribed, every share is assigned a unique participation number. The system adds up all numbers and applies the formula above',
+    introSpan: 'to pick the winner fairly and transparently.',
+    partTime: 'Participation time',
+    luckyNum: 'Lucky number',
+    finalTitle: 'Final lucky number',
+    resultBefore: 'The last',
+    resultDigits: '7 digits',
+    resultAfter: 'of the calculated value',
+    prizeTiers: 'Prize tiers',
+    rank1: '1st prize',
+    rank1Num: 'Last 7 digits',
+    rank2: '2nd prize',
+    rank2Num: 'Last 5 digits',
+    rank3: '3rd prize',
+    rank3Num: 'Last 3 digits',
+  },
+  hi: {
+    navTitle: 'विजेता गणना',
+    algTitle: 'विजेता चुनने का एल्गोरिदम',
+    algText1: '(सभी भागीदारी नंबरों का योग + आखिरी भागीदारी का मान) ÷ कुल शेयर',
+    algText2: 'शेष बचा मान लकी विजेता नंबर तय करता है।',
+    intro: 'जब कोई ग्रुप बाय पूरी तरह भर जाता है, तो हर शेयर को एक अनोखा भागीदारी नंबर दिया जाता है। सिस्टम सभी नंबरों को जोड़ता है और ऊपर दिए फ़ॉर्मूले को लागू करता है',
+    introSpan: 'ताकि विजेता निष्पक्ष और पारदर्शी तरीके से चुना जा सके।',
+    partTime: 'भागीदारी का समय',
+    luckyNum: 'लकी नंबर',
+    finalTitle: 'अंतिम लकी नंबर',
+    resultBefore: 'गणना किए गए मान के आखिरी',
+    resultDigits: '7 अंक',
+    resultAfter: '',
+    prizeTiers: 'इनाम श्रेणियाँ',
+    rank1: 'पहला इनाम',
+    rank1Num: 'आखिरी 7 अंक',
+    rank2: 'दूसरा इनाम',
+    rank2Num: 'आखिरी 5 अंक',
+    rank3: 'तीसरा इनाम',
+    rank3Num: 'आखिरी 3 अंक',
+  },
+} });
 
 const example = [
   { time: '2026-11-08 20:00:01', code: '8829301' },
@@ -8,33 +55,32 @@ const example = [
   { time: '2026-11-08 20:00:05', code: '6628104' },
   { time: '2026-11-08 20:00:06', code: '3390517' },
 ];
-const ranks = [
-  { title: '1st prize', num: 'Last 7 digits' },
-  { title: '2nd prize', num: 'Last 5 digits' },
-  { title: '3rd prize', num: 'Last 3 digits' },
-];
+const ranks = computed(() => [
+  { title: t('rank1'), num: t('rank1Num') },
+  { title: t('rank2'), num: t('rank2Num') },
+  { title: t('rank3'), num: t('rank3Num') },
+]);
 </script>
 
 <!-- Faithful rebuild of the real pages/goods/calculation (.calculation) + scoped CSS. -->
 <template>
   <div class="calculation">
-    <NavBar title="Winning Calculation" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="alg">
-      <div class="alg-title">Winning algorithm</div>
-      <div class="alg-text">(Sum of all participation numbers + value of the last participation) ÷ total shares</div>
-      <div class="alg-text">The remainder decides the lucky winning number.</div>
+      <div class="alg-title">{{ t('algTitle') }}</div>
+      <div class="alg-text">{{ t('algText1') }}</div>
+      <div class="alg-text">{{ t('algText2') }}</div>
     </div>
 
     <div class="intro">
-      When a group buy is fully subscribed, every share is assigned a unique participation number. The system adds up all
-      numbers and applies the formula above<span>to pick the winner fairly and transparently.</span>
+      {{ t('intro') }}<span>{{ t('introSpan') }}</span>
     </div>
 
     <div class="list">
       <div class="header">
-        <div class="header-left">Participation time</div>
-        <div class="header-right">Lucky number</div>
+        <div class="header-left">{{ t('partTime') }}</div>
+        <div class="header-right">{{ t('luckyNum') }}</div>
       </div>
       <div class="main">
         <div v-for="(r, i) in example" :key="i" class="item">
@@ -45,12 +91,12 @@ const ranks = [
     </div>
 
     <div class="result">
-      <div class="result-title">Final lucky number</div>
-      <div class="result-main">The last <span>7 digits</span> of the calculated value</div>
+      <div class="result-title">{{ t('finalTitle') }}</div>
+      <div class="result-main">{{ t('resultBefore') }} <span>{{ t('resultDigits') }}</span> {{ t('resultAfter') }}</div>
     </div>
 
     <div class="discount">
-      <div>Prize tiers</div>
+      <div>{{ t('prizeTiers') }}</div>
       <div class="discount_rank">
         <div v-for="(r, i) in ranks" :key="i" class="discount_rank_item">
           <div class="discount_rank_item_title">{{ r.title }}</div>

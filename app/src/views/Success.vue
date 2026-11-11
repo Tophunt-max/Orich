@@ -1,8 +1,59 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      yourOrder: 'Your order',
+      paymentSuccess: 'Payment successful! Your order has been placed.',
+      start: 'Start',
+      maturity: 'Maturity',
+      home: 'Home',
+      myOrders: 'My orders',
+      orderNo: 'Order No',
+      view: 'View',
+      amount: 'Amount',
+      time: 'Time',
+      joinGroupTip: 'Join our WhatsApp group to track your order and claim rewards',
+      joinWhatsapp: 'Join WhatsApp',
+      shareOrder: 'Share this order ›',
+      step1: 'Add our official WhatsApp number to receive your order updates.',
+      step2: 'Send your order number in the chat to confirm your entry.',
+      step3: 'Our team will share winner announcements and delivery details.',
+      linkUnavailable: 'WhatsApp link unavailable',
+      linkCopied: 'Share link copied ✓',
+      noShareLink: 'No share link available',
+      shareError: 'Could not generate share link',
+    },
+    hi: {
+      yourOrder: 'आपका ऑर्डर',
+      paymentSuccess: 'भुगतान सफल! आपका ऑर्डर दे दिया गया है।',
+      start: 'शुरू',
+      maturity: 'परिपक्वता',
+      home: 'होम',
+      myOrders: 'मेरे ऑर्डर',
+      orderNo: 'ऑर्डर नंबर',
+      view: 'देखें',
+      amount: 'राशि',
+      time: 'समय',
+      joinGroupTip: 'अपने ऑर्डर को ट्रैक करने और इनाम पाने के लिए हमारे WhatsApp ग्रुप से जुड़ें',
+      joinWhatsapp: 'WhatsApp से जुड़ें',
+      shareOrder: 'इस ऑर्डर को साझा करें ›',
+      step1: 'ऑर्डर अपडेट पाने के लिए हमारा आधिकारिक WhatsApp नंबर जोड़ें।',
+      step2: 'अपनी प्रविष्टि की पुष्टि के लिए चैट में अपना ऑर्डर नंबर भेजें।',
+      step3: 'हमारी टीम विजेता घोषणाएं और डिलीवरी विवरण साझा करेगी।',
+      linkUnavailable: 'WhatsApp लिंक उपलब्ध नहीं है',
+      linkCopied: 'साझा लिंक कॉपी हो गया ✓',
+      noShareLink: 'कोई साझा लिंक उपलब्ध नहीं है',
+      shareError: 'साझा लिंक नहीं बनाया जा सका',
+    },
+  },
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -16,7 +67,7 @@ onMounted(async () => {
 
 function openWhatsapp() {
   if (whatsappUrl.value) window.open(whatsappUrl.value, '_blank');
-  else toast('WhatsApp link unavailable');
+  else toast(t('linkUnavailable'));
 }
 
 async function share() {
@@ -25,18 +76,18 @@ async function share() {
     const r = await api.orderShare(id);
     const link = r?.link || '';
     if (link) {
-      try { await navigator.clipboard.writeText(link); toast('Share link copied ✓'); }
+      try { await navigator.clipboard.writeText(link); toast(t('linkCopied')); }
       catch { toast(link); }
     } else {
-      toast('No share link available');
+      toast(t('noShareLink'));
     }
   } catch {
-    toast('Could not generate share link');
+    toast(t('shareError'));
   }
 }
 
 // Data-light: read optional details from the route query.
-const title = computed(() => route.query.title || route.query.product || 'Your order');
+const title = computed(() => route.query.title || route.query.product || t('yourOrder'));
 const orderNo = computed(() => route.query.order || route.query.id || '');
 const amount = computed(() => route.query.amount || '');
 const time = computed(() => route.query.time || new Date().toLocaleString());
@@ -46,11 +97,7 @@ const isFinance = computed(() => route.query.type === 'finance' || !!route.query
 const startTime = computed(() => route.query.start || '');
 const endTime = computed(() => route.query.end || '');
 
-const steps = [
-  'Add our official WhatsApp number to receive your order updates.',
-  'Send your order number in the chat to confirm your entry.',
-  'Our team will share winner announcements and delivery details.',
-];
+const steps = computed(() => [t('step1'), t('step2'), t('step3')]);
 </script>
 
 <!-- Faithful rebuild of the real pages/success/index payment-success layout + scoped CSS. -->
@@ -58,7 +105,7 @@ const steps = [
   <div class="success">
     <div class="top">
       <img class="top-img" src="/static/image/bask/img_Successful.png" alt="" />
-      <div class="top-tips">Payment successful! Your order has been placed.</div>
+      <div class="top-tips">{{ t('paymentSuccess') }}</div>
 
       <div v-if="isFinance" class="finance-tips">
         <div class="finance-tips-dot">
@@ -68,36 +115,36 @@ const steps = [
         </div>
         <div class="finance-tips-main">
           <div class="start">
-            <div>Start</div>
+            <div>{{ t('start') }}</div>
             <div class="time"><span>{{ startTime || '—' }}</span></div>
           </div>
           <div class="end">
-            <div>Maturity</div>
+            <div>{{ t('maturity') }}</div>
             <div class="time"><span>{{ endTime || '—' }}</span></div>
           </div>
         </div>
       </div>
 
       <div class="top-btn">
-        <button class="big-btn" style="height:39px;margin:0;width:143px" @click="router.replace('/home')">Home</button>
-        <button class="big-btn" style="height:39px;margin:0;width:143px;background:#fff;color:#ee5016;border:1px solid #ee5016" @click="router.replace('/account')">My orders</button>
+        <button class="big-btn" style="height:39px;margin:0;width:143px" @click="router.replace('/home')">{{ t('home') }}</button>
+        <button class="big-btn" style="height:39px;margin:0;width:143px;background:#fff;color:#ee5016;border:1px solid #ee5016" @click="router.replace('/account')">{{ t('myOrders') }}</button>
       </div>
     </div>
 
     <div class="goods">
       <div class="goods-title">{{ title }}</div>
       <div class="goods-num">
-        Order No: {{ orderNo || '—' }}
-        <span class="goods-view" @click="router.replace('/account')">View ›</span>
+        {{ t('orderNo') }}: {{ orderNo || '—' }}
+        <span class="goods-view" @click="router.replace('/account')">{{ t('view') }} ›</span>
       </div>
-      <div v-if="amount" class="goods-time">Amount: ₹{{ amount }}</div>
-      <div class="goods-time">Time: {{ time }}</div>
+      <div v-if="amount" class="goods-time">{{ t('amount') }}: ₹{{ amount }}</div>
+      <div class="goods-time">{{ t('time') }}: {{ time }}</div>
     </div>
 
     <div class="bottom">
       <div class="gift">
         <img src="/static/image/bask/img_Gift.png" alt="" />
-        <div class="gift-text">Join our WhatsApp group to track your order and claim rewards</div>
+        <div class="gift-text">{{ t('joinGroupTip') }}</div>
       </div>
 
       <div class="step">
@@ -109,10 +156,10 @@ const steps = [
 
       <div class="whatsapp" @click="openWhatsapp">
         <div class="whatsapp_img"><img src="/static/image/bask/img_whatsapp.png" alt="" /></div>
-        <div class="whatsapp_text">Join WhatsApp</div>
+        <div class="whatsapp_text">{{ t('joinWhatsapp') }}</div>
       </div>
 
-      <div class="share-order" @click="share">Share this order ›</div>
+      <div class="share-order" @click="share">{{ t('shareOrder') }}</div>
     </div>
   </div>
 </template>

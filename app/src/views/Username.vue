@@ -1,10 +1,33 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Change Nickname',
+      nickname: 'Nickname',
+      placeholder: 'Enter your nickname',
+      save: 'Save',
+      pleaseEnter: 'Please enter a nickname',
+      saved: 'Saved',
+    },
+    hi: {
+      navTitle: 'उपनाम बदलें',
+      nickname: 'उपनाम',
+      placeholder: 'अपना उपनाम दर्ज करें',
+      save: 'सहेजें',
+      pleaseEnter: 'कृपया एक उपनाम दर्ज करें',
+      saved: 'सहेजा गया',
+    },
+  },
+});
 
 const router = useRouter();
 const auth = useAuth();
@@ -14,12 +37,12 @@ const busy = ref(false);
 
 async function save() {
   const v = name.value.trim();
-  if (!v) { toast('Please enter a nickname'); return; }
+  if (!v) { toast(t('pleaseEnter')); return; }
   busy.value = true;
   try {
     const d = await api.accountEdit(v);
     if (d?.user) auth.user = d.user; else await auth.refresh();
-    toast('Saved');
+    toast(t('saved'));
     router.back();
   } catch (e) { toast(e.message); }
   finally { busy.value = false; }
@@ -29,14 +52,14 @@ async function save() {
 <!-- Faithful rebuild of the real pages/account/username layout + scoped CSS. -->
 <template>
   <div class="username">
-    <NavBar title="Change Nickname" />
+    <NavBar :title="t('navTitle')" />
     <div class="list">
       <div class="item">
-        <div class="item-key">Nickname</div>
-        <input class="item-name" v-model="name" maxlength="24" placeholder="Enter your nickname" />
+        <div class="item-key">{{ t('nickname') }}</div>
+        <input class="item-name" v-model="name" maxlength="24" :placeholder="t('placeholder')" />
       </div>
     </div>
-    <button class="logout" :disabled="busy" @click="save">Save</button>
+    <button class="logout" :disabled="busy" @click="save">{{ t('save') }}</button>
   </div>
 </template>
 

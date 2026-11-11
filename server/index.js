@@ -155,7 +155,7 @@ const userRoutes = {
     const amount = Math.round(Number(b.amount) * 100);
     if (!amount || amount < 100) return err('Minimum recharge is ₹1');
     const u = ctx.user.user; u.balance += amount;
-    const order = addOrder(u.id, 'recharge', { amount: rupees(amount), status: 'success' });
+    const order = addOrder(u.id, 'recharge', { amount: rupees(amount), status: 'success', channel: b.channel || 'upi' });
     return ok({ order, balance: rupees(u.balance) }, 'Recharge successful');
   },
   '/index/addorder': (b, ctx) => {

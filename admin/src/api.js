@@ -38,6 +38,7 @@ export const api = {
   userDelete: (id) => req('POST', '/users/delete', { id }),
   userDetail: (id) => req('GET', '/user?id=' + id),
   orders: (type) => req('GET', '/orders' + (type ? '?type=' + type : '')),
+  events: () => req('GET', '/events'),
   orderStatus: (id, status) => req('POST', '/orders/status', { id, status }),
   orderDelete: (id) => req('POST', '/orders/delete', { id }),
   settings: (settings) => req('POST', '/settings', { settings }),

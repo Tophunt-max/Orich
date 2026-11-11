@@ -1,19 +1,58 @@
 <script setup>
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
+import { api } from '../api/client';
+import { useAuth } from '../stores/auth';
 import { useToast } from '../components/useToast';
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuth();
 const { toast } = useToast();
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Payment',
+      amountPayable: 'Amount payable',
+      payWith: 'Pay with',
+      paymentGateway: 'Payment gateway',
+      payNow: 'Pay now',
+      note: 'You will be redirected after the payment is confirmed.',
+      paymentSuccessful: 'Payment successful',
+    },
+    hi: {
+      navTitle: 'भुगतान',
+      amountPayable: 'देय राशि',
+      payWith: 'इससे भुगतान करें',
+      paymentGateway: 'भुगतान गेटवे',
+      payNow: 'अभी भुगतान करें',
+      note: 'भुगतान की पुष्टि होने के बाद आपको रीडायरेक्ट किया जाएगा।',
+      paymentSuccessful: 'भुगतान सफल',
+    },
+  },
+});
 const amount = ref(route.query.amount || '0.00');
+const channelLabel = { upi: 'UPI', xpay: 'XPay', paytm: 'Paytm' };
+const channel = ref(route.query.channel || 'upi');
 const busy = ref(false);
 
-function pay() {
+async function pay() {
   busy.value = true;
-  toast('Payment successful');
-  setTimeout(() => router.replace('/success'), 600);
+  try {
+    // For a recharge, the gateway confirmation credits the wallet via addrechargepay2.
+    if (route.query.type === 'recharge') {
+      const amt = Number(route.query.amount) || 0;
+      const data = await api.recharge(amt, channel.value);
+      api.track('recharge', { amount: amt, channel: channel.value });
+      if (auth.user) auth.user = { ...auth.user, balance: data.balance };
+    }
+    await api.payStatus(route.query.o || route.query.order || 0);
+    toast(t('paymentSuccessful'));
+    setTimeout(() => router.replace('/success?type=' + (route.query.type || '')), 600);
+  } catch (e) { toast(e.message); busy.value = false; }
 }
 </script>
 
@@ -21,16 +60,16 @@ function pay() {
      The real page embeds a payment-gateway webview; here we simulate the gateway. -->
 <template>
   <div>
-    <NavBar title="Payment" />
+    <NavBar :title="t('navTitle')" />
     <div class="form">
-      <div class="pay_amount_label">Amount payable</div>
+      <div class="pay_amount_label">{{ t('amountPayable') }}</div>
       <div class="pay_amount">₹{{ amount }}</div>
       <div class="pay_method">
-        <span>Pay with</span>
-        <span class="pay_method_val">Payment gateway</span>
+        <span>{{ t('payWith') }}</span>
+        <span class="pay_method_val">{{ channelLabel[channel] || t('paymentGateway') }}</span>
       </div>
-      <button class="pay_btn" :disabled="busy" @click="pay">Pay now</button>
-      <div class="pay_note">You will be redirected after the payment is confirmed.</div>
+      <button class="pay_btn" :disabled="busy" @click="pay">{{ t('payNow') }}</button>
+      <div class="pay_note">{{ t('note') }}</div>
     </div>
   </div>
 </template>

@@ -1,13 +1,54 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      directTitle: 'Direct Members',
+      indirectTitle: 'Indirect Members',
+      level1: 'Level 1',
+      level2: 'Level 2',
+      members: 'Members',
+      rewards: 'Rewards',
+      direct: 'Direct',
+      indirect: 'Indirect',
+      member: 'Member',
+      team: 'Team',
+      recharge: 'Recharge',
+      reward: 'Reward',
+      noMembers: 'No members at this level yet',
+      commissionRecords: 'Commission records',
+      noCommission: 'No commission records yet',
+    },
+    hi: {
+      directTitle: 'प्रत्यक्ष सदस्य',
+      indirectTitle: 'अप्रत्यक्ष सदस्य',
+      level1: 'स्तर 1',
+      level2: 'स्तर 2',
+      members: 'सदस्य',
+      rewards: 'इनाम',
+      direct: 'प्रत्यक्ष',
+      indirect: 'अप्रत्यक्ष',
+      member: 'सदस्य',
+      team: 'टीम',
+      recharge: 'रिचार्ज',
+      reward: 'इनाम',
+      noMembers: 'इस स्तर पर अभी कोई सदस्य नहीं',
+      commissionRecords: 'कमीशन रिकॉर्ड',
+      noCommission: 'अभी तक कोई कमीशन रिकॉर्ड नहीं',
+    },
+  },
+});
 
 const route = useRoute();
 const router = useRouter();
 const level = computed(() => (route.params.level === 'indirect' ? 'indirect' : 'direct'));
-const title = computed(() => (level.value === 'indirect' ? 'Indirect Members' : 'Direct Members'));
+const title = computed(() => (level.value === 'indirect' ? t('indirectTitle') : t('directTitle')));
 const wantedLevel = computed(() => (level.value === 'indirect' ? 2 : 1));
 
 const teamData = ref(null);
@@ -45,17 +86,17 @@ function switchLevel(l) {
       <div class="detail_count_march">
         <div class="detail_count_march_item">
           <span class="detail_count_march_title">{{ title }}</span>
-          <span class="detail_count_march_select">{{ level === 'indirect' ? 'Level 2' : 'Level 1' }}</span>
+          <span class="detail_count_march_select">{{ level === 'indirect' ? t('level2') : t('level1') }}</span>
         </div>
       </div>
       <div class="detail_count_money">
         <div class="detail_count_money_item">
           <div class="money">{{ summary.members }}</div>
-          <div class="title">Members</div>
+          <div class="title">{{ t('members') }}</div>
         </div>
         <div class="detail_count_money_item">
           <div class="money">₹{{ summary.commission }}</div>
-          <div class="title">Rewards</div>
+          <div class="title">{{ t('rewards') }}</div>
         </div>
       </div>
     </div>
@@ -63,10 +104,10 @@ function switchLevel(l) {
     <div class="detail_tab">
       <div class="detail_list_tab">
         <div class="detail_list_tab_item" @click="switchLevel('direct')">
-          <div class="detail_list_tab_item_title" :class="{ item_active: level === 'direct' }">Direct</div>
+          <div class="detail_list_tab_item_title" :class="{ item_active: level === 'direct' }">{{ t('direct') }}</div>
         </div>
         <div class="detail_list_tab_item" @click="switchLevel('indirect')">
-          <div class="detail_list_tab_item_title" :class="{ item_active: level === 'indirect' }">Indirect</div>
+          <div class="detail_list_tab_item_title" :class="{ item_active: level === 'indirect' }">{{ t('indirect') }}</div>
         </div>
       </div>
 
@@ -77,45 +118,45 @@ function switchLevel(l) {
               <div class="detail_list_content_item_avatar">
                 <img :src="m.avatar || avatarFallback" alt="" />
               </div>
-              <div class="detail_list_content_item_name">{{ m.nickname || m.name || 'Member' }}</div>
+              <div class="detail_list_content_item_name">{{ m.nickname || m.name || t('member') }}</div>
               <div v-if="m.vip" class="detail_list_content_item_vipimg">VIP</div>
               <div class="detail_list_content_item_team">
-                Team<span>{{ m.teamCount ?? 0 }}</span>
+                {{ t('team') }}<span>{{ m.teamCount ?? 0 }}</span>
               </div>
             </div>
             <div class="detail_list_content_item_count">
               <div class="detail_list_content_item_count_tab">
-                <div>Recharge</div>
+                <div>{{ t('recharge') }}</div>
                 <div class="money">₹{{ m.recharge || '0.00' }}</div>
               </div>
               <div class="detail_list_content_item_count_tab">
-                <div>Reward</div>
+                <div>{{ t('reward') }}</div>
                 <div class="money">₹{{ m.commission || '0.00' }}</div>
               </div>
             </div>
           </div>
         </template>
-        <div v-else class="detail_empty">No members at this level yet</div>
+        <div v-else class="detail_empty">{{ t('noMembers') }}</div>
       </div>
     </div>
 
     <!-- Commission records (api.rebateList) -->
     <div class="rebate">
-      <div class="rebate_head">Commission records</div>
+      <div class="rebate_head">{{ t('commissionRecords') }}</div>
       <div class="rebate_list">
         <template v-if="rebates.length">
           <div v-for="(r, i) in rebates" :key="i" class="rebate_item">
             <div class="rebate_item_left">
-              <div class="rebate_item_name">{{ r.name || 'Member' }}</div>
+              <div class="rebate_item_name">{{ r.name || t('member') }}</div>
               <div class="rebate_item_meta">
-                <span class="rebate_badge" :class="(r.level === 'Indirect') ? 'indirect' : 'direct'">{{ r.level || 'Direct' }}</span>
+                <span class="rebate_badge" :class="(r.level === 'Indirect') ? 'indirect' : 'direct'">{{ r.level || t('direct') }}</span>
                 <span class="rebate_date">{{ r.date || '' }}</span>
               </div>
             </div>
             <div class="rebate_item_amount">+₹{{ r.amount ?? '0.00' }}</div>
           </div>
         </template>
-        <div v-else class="detail_empty">No commission records yet</div>
+        <div v-else class="detail_empty">{{ t('noCommission') }}</div>
       </div>
     </div>
   </div>

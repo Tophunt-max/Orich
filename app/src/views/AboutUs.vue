@@ -1,5 +1,25 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
+
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: {
+    navTitle: 'About Us',
+    version: 'Version',
+    current: 'Current Version',
+    agreement: 'User Agreement',
+    privacy: 'Privacy Policy',
+    desc: 'ORich is a group-buy and lucky-draw platform where you can join product rounds from as little as a few rupees per share, win prizes, grow your wallet with finance plans, and invite friends to earn referral rewards.',
+  },
+  hi: {
+    navTitle: 'हमारे बारे में',
+    version: 'वर्शन',
+    current: 'मौजूदा वर्शन',
+    agreement: 'उपयोगकर्ता समझौता',
+    privacy: 'गोपनीयता नीति',
+    desc: 'ORich एक ग्रुप-बाय और लकी-ड्रॉ प्लेटफ़ॉर्म है, जहाँ आप प्रति शेयर कुछ रुपयों से ही प्रोडक्ट राउंड में शामिल हो सकते हैं, इनाम जीत सकते हैं, फाइनेंस प्लान से अपना वॉलेट बढ़ा सकते हैं और दोस्तों को बुलाकर रेफरल रिवॉर्ड कमा सकते हैं।',
+  },
+} });
 
 const arrow = '/static/image/icon_CaretRight.png';
 const version = '2.1.4';
@@ -8,29 +28,29 @@ const version = '2.1.4';
 <!-- Faithful rebuild of the real pages/account/aboutus layout + scoped CSS. -->
 <template>
   <div class="about">
-    <NavBar title="About Us" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="about_logo">
       <img class="about_logo_icon" src="/static/image/logo.png" alt="" />
       <div class="about_logo_name">ORich</div>
-      <div class="about_logo_ver">Version {{ version }}</div>
+      <div class="about_logo_ver">{{ t('version') }} {{ version }}</div>
     </div>
 
     <div class="about_main">
       <div class="about_main_item border_bottom">
-        <div class="about_main_item_title">Current Version</div>
+        <div class="about_main_item_title">{{ t('current') }}</div>
         <div class="about_main_item_right">
           <span>{{ version }}</span>
         </div>
       </div>
       <div class="about_main_item border_bottom">
-        <div class="about_main_item_title">User Agreement</div>
+        <div class="about_main_item_title">{{ t('agreement') }}</div>
         <div class="about_main_item_right">
           <img class="about_main_item_icon" :src="arrow" alt="" />
         </div>
       </div>
       <div class="about_main_item">
-        <div class="about_main_item_title">Privacy Policy</div>
+        <div class="about_main_item_title">{{ t('privacy') }}</div>
         <div class="about_main_item_right">
           <img class="about_main_item_icon" :src="arrow" alt="" />
         </div>
@@ -38,9 +58,7 @@ const version = '2.1.4';
     </div>
 
     <div class="about_desc">
-      ORich is a group-buy and lucky-draw platform where you can join product rounds from
-      as little as a few rupees per share, win prizes, grow your wallet with finance plans,
-      and invite friends to earn referral rewards.
+      {{ t('desc') }}
     </div>
   </div>
 </template>

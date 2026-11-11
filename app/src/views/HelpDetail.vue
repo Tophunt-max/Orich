@@ -1,8 +1,25 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Help',
+      noDetails: 'No additional details for this question.',
+      notFound: 'Question not found',
+    },
+    hi: {
+      navTitle: 'सहायता',
+      noDetails: 'इस प्रश्न के लिए कोई अतिरिक्त विवरण नहीं है।',
+      notFound: 'प्रश्न नहीं मिला',
+    },
+  },
+});
 
 const route = useRoute();
 const item = ref(null);
@@ -28,16 +45,16 @@ onMounted(async () => {
 <!-- Faithful rebuild of pages/help/help_detail (.detail): question title + rich answer body. -->
 <template>
   <div class="scr">
-    <NavBar title="Help" />
+    <NavBar :title="t('navTitle')" />
     <div class="detail">
       <template v-if="item">
         <div class="detail_title">{{ item.q }}</div>
         <div class="detail_body">
           <p v-for="(p, i) in paragraphs" :key="i">{{ p }}</p>
-          <p v-if="!paragraphs.length">No additional details for this question.</p>
+          <p v-if="!paragraphs.length">{{ t('noDetails') }}</p>
         </div>
       </template>
-      <div v-else-if="loaded" class="detail_empty">Question not found</div>
+      <div v-else-if="loaded" class="detail_empty">{{ t('notFound') }}</div>
     </div>
   </div>
 </template>

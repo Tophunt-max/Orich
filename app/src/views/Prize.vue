@@ -1,8 +1,59 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      peopleDividing: '{count} people are dividing the prize',
+      totalPool: 'Total prize pool',
+      endsIn: 'Ends in',
+      inviteTips: 'Invite friends to split a bigger prize together',
+      inviteNow: 'Invite now',
+      winners: 'Winners',
+      rulesTab: 'Rules',
+      won: 'won',
+      shares: 'shares',
+      congratulations: 'Congratulations',
+      wonShare: 'You won a share!',
+      prizeCredited: 'Your prize has been credited',
+      keepInviting: 'Keep inviting friends to win even more',
+      close: 'Close',
+      view: 'View',
+      inviteCopied: 'Invite link copied — share to grow the pool!',
+      rule1: 'Invite friends to join and the shared prize pool grows for everyone.',
+      rule2: 'Each friend who joins adds their contribution to your group total.',
+      rule3: 'When the timer ends, the pool is divided among all participants.',
+      rule4: 'Your share is credited to your balance automatically.',
+    },
+    hi: {
+      peopleDividing: '{count} लोग पुरस्कार बाँट रहे हैं',
+      totalPool: 'कुल पुरस्कार राशि',
+      endsIn: 'समाप्त होने में',
+      inviteTips: 'एक साथ बड़ा पुरस्कार बाँटने के लिए दोस्तों को आमंत्रित करें',
+      inviteNow: 'अभी आमंत्रित करें',
+      winners: 'विजेता',
+      rulesTab: 'नियम',
+      won: 'जीता',
+      shares: 'शेयर',
+      congratulations: 'बधाई हो',
+      wonShare: 'आपने एक हिस्सा जीता!',
+      prizeCredited: 'आपका पुरस्कार जमा कर दिया गया है',
+      keepInviting: 'और अधिक जीतने के लिए दोस्तों को आमंत्रित करते रहें',
+      close: 'बंद करें',
+      view: 'देखें',
+      inviteCopied: 'आमंत्रण लिंक कॉपी हो गया — राशि बढ़ाने के लिए साझा करें!',
+      rule1: 'दोस्तों को शामिल होने के लिए आमंत्रित करें और साझा पुरस्कार राशि सबके लिए बढ़ती है।',
+      rule2: 'शामिल होने वाला हर दोस्त आपके समूह के कुल में अपना योगदान जोड़ता है।',
+      rule3: 'जब टाइमर समाप्त होता है, तो राशि सभी प्रतिभागियों में बाँटी जाती है।',
+      rule4: 'आपका हिस्सा अपने आप आपके बैलेंस में जमा हो जाता है।',
+    },
+  },
+});
 
 const router = useRouter();
 const { toast } = useToast();
@@ -28,12 +79,7 @@ const inviteAvatars = computed(() => {
   return av.slice(0, 5);
 });
 
-const rules = [
-  'Invite friends to join and the shared prize pool grows for everyone.',
-  'Each friend who joins adds their contribution to your group total.',
-  'When the timer ends, the pool is divided among all participants.',
-  'Your share is credited to your balance automatically.',
-];
+const rules = computed(() => [t('rule1'), t('rule2'), t('rule3'), t('rule4')]);
 
 onMounted(async () => {
   try { prizes.value = (await api.prizes()).list || []; } catch { /* ignore */ }
@@ -41,7 +87,7 @@ onMounted(async () => {
 });
 
 function invite() {
-  toast('Invite link copied — share to grow the pool!');
+  toast(t('inviteCopied'));
 }
 </script>
 
@@ -50,12 +96,12 @@ function invite() {
   <div class="prize">
     <div class="prize_bg"><img src="/static/image/prize/bg_partition.png" alt="" /></div>
 
-    <div class="prize_people">{{ peopleCount.toLocaleString('en-IN') }} people are dividing the prize</div>
+    <div class="prize_people">{{ t('peopleDividing', { count: peopleCount.toLocaleString('en-IN') }) }}</div>
 
     <div class="prize_amount">
-      <div class="prize_amount_title">Total prize pool</div>
+      <div class="prize_amount_title">{{ t('totalPool') }}</div>
       <div class="prize_amount_money"><span>₹</span>{{ poolAmount }}</div>
-      <div class="prize_amount_time">Ends in<span>23:59:59</span></div>
+      <div class="prize_amount_time">{{ t('endsIn') }}<span>23:59:59</span></div>
     </div>
 
     <div class="prize_invite">
@@ -64,17 +110,17 @@ function invite() {
           <img :src="a" alt="" />
         </div>
       </div>
-      <div class="prize_invite_tips">Invite friends to split a bigger prize together</div>
-      <button class="prize_invite_btn" @click="invite">Invite now</button>
+      <div class="prize_invite_tips">{{ t('inviteTips') }}</div>
+      <button class="prize_invite_btn" @click="invite">{{ t('inviteNow') }}</button>
     </div>
 
     <div class="prize_tabs">
       <div class="prize_tabs_item" @click="tab = 0">
-        <div :class="{ active: tab === 0 }">Winners</div>
+        <div :class="{ active: tab === 0 }">{{ t('winners') }}</div>
         <div v-if="tab === 0" class="prize_tabs_item_icon"></div>
       </div>
       <div class="prize_tabs_item" @click="tab = 1">
-        <div :class="{ active: tab === 1 }">Rules</div>
+        <div :class="{ active: tab === 1 }">{{ t('rulesTab') }}</div>
         <div v-if="tab === 1" class="prize_tabs_item_icon"></div>
       </div>
     </div>
@@ -89,7 +135,7 @@ function invite() {
                 <span class="name">{{ w.name }}</span>
                 <span class="time">{{ w.date }}</span>
               </div>
-              <div class="bottom">won {{ w.product }} · {{ w.shares }} shares</div>
+              <div class="bottom">{{ t('won') }} {{ w.product }} · {{ w.shares }} {{ t('shares') }}</div>
             </div>
           </div>
         </template>
@@ -109,16 +155,16 @@ function invite() {
 
     <div v-if="showSuccess" class="mask" @click.self="showSuccess = false">
       <div class="m-modal m-modal-success">
-        <div class="p-title">Congratulations</div>
-        <div class="m-title">You won a share!</div>
+        <div class="p-title">{{ t('congratulations') }}</div>
+        <div class="m-title">{{ t('wonShare') }}</div>
         <div class="p-main">
           <div class="p-main-icon"><img src="/static/image/prize/Group247.png" alt="" /></div>
-          <div class="p-main-tips">Your prize has been credited</div>
+          <div class="p-main-tips">{{ t('prizeCredited') }}</div>
           <div class="p-main-price"><span>₹</span>{{ poolAmount }}</div>
-          <div class="p-main-tips2">Keep inviting friends to win even more</div>
+          <div class="p-main-tips2">{{ t('keepInviting') }}</div>
           <div class="p-btn">
-            <div class="m-btn-item m-btn-left" @click="showSuccess = false">Close</div>
-            <div class="m-btn-item m-btn-right" @click="router.push('/winner')">View</div>
+            <div class="m-btn-item m-btn-left" @click="showSuccess = false">{{ t('close') }}</div>
+            <div class="m-btn-item m-btn-right" @click="router.push('/winner')">{{ t('view') }}</div>
           </div>
         </div>
       </div>

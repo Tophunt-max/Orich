@@ -1,9 +1,32 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Payment Methods',
+      empty: 'No payment method yet',
+      bank: 'Bank',
+      delete: 'Delete',
+      addMethod: '+ Add payment method',
+      removed: 'Removed',
+    },
+    hi: {
+      navTitle: 'भुगतान के तरीके',
+      empty: 'अभी तक कोई भुगतान तरीका नहीं',
+      bank: 'बैंक',
+      delete: 'हटाएं',
+      addMethod: '+ भुगतान तरीका जोड़ें',
+      removed: 'हटा दिया गया',
+    },
+  },
+});
 
 const router = useRouter();
 const { toast } = useToast();
@@ -15,7 +38,7 @@ async function load() {
 onMounted(load);
 
 async function del(id) {
-  try { await api.bankDel(id); toast('Removed'); load(); } catch (e) { toast(e.message); }
+  try { await api.bankDel(id); toast(t('removed')); load(); } catch (e) { toast(e.message); }
 }
 
 function last4(n) { return String(n || '').slice(-4).padStart(4, '•'); }
@@ -24,11 +47,11 @@ function last4(n) { return String(n || '').slice(-4).padStart(4, '•'); }
 <!-- Faithful rebuild of the real pages/payment/payment (.payment) + scoped CSS. -->
 <template>
   <div class="payment">
-    <NavBar title="Payment Methods" />
+    <NavBar :title="t('navTitle')" />
 
     <div v-if="!banks.length" class="empty2">
       <img src="/static/image/nodata.png" alt="" />
-      <div>No payment method yet</div>
+      <div>{{ t('empty') }}</div>
     </div>
 
     <div class="payment_main">
@@ -37,8 +60,8 @@ function last4(n) { return String(n || '').slice(-4).padStart(4, '•'); }
           <div class="payment_card_top_img">
             <img src="/static/image/pay/icon_identification.png" alt="" />
           </div>
-          <div class="payment_card_top_name">{{ b.type || 'Bank' }}</div>
-          <span class="card_del" @click="del(b.id)">Delete</span>
+          <div class="payment_card_top_name">{{ b.type || t('bank') }}</div>
+          <span class="card_del" @click="del(b.id)">{{ t('delete') }}</span>
         </div>
         <div class="payment_card_number">
           <div class="payment_card_number_circular"></div>
@@ -55,7 +78,7 @@ function last4(n) { return String(n || '').slice(-4).padStart(4, '•'); }
       </div>
     </div>
 
-    <button class="payment_add" @click="router.push('/payment/add')">+ Add payment method</button>
+    <button class="payment_add" @click="router.push('/payment/add')">{{ t('addMethod') }}</button>
   </div>
 </template>
 

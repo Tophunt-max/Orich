@@ -1,33 +1,62 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Funding Records',
+      empty: 'No funding records',
+      recharge: 'Recharge',
+      withdrawal: 'Withdrawal',
+      spending: 'Spending',
+      luckyDraw: 'Lucky draw',
+      finance: 'Finance',
+      vip: 'VIP',
+      luckyNumber: 'Lucky number',
+    },
+    hi: {
+      navTitle: 'फंडिंग रिकॉर्ड',
+      empty: 'कोई फंडिंग रिकॉर्ड नहीं',
+      recharge: 'रिचार्ज',
+      withdrawal: 'निकासी',
+      spending: 'व्यय',
+      luckyDraw: 'लकी ड्रॉ',
+      finance: 'वित्त',
+      vip: 'वीआईपी',
+      luckyNumber: 'लकी नंबर',
+    },
+  },
+});
 
 const list = ref([]);
 
 // Human labels for the spending record types returned by consumeList.
 const CONSUME_LABELS = {
-  join: 'Lucky draw',
-  finance: 'Finance',
-  vip: 'VIP',
-  lucky: 'Lucky number',
-  withdraw: 'Withdrawal',
+  join: t('luckyDraw'),
+  finance: t('finance'),
+  vip: t('vip'),
+  lucky: t('luckyNumber'),
+  withdraw: t('withdrawal'),
 };
 
 onMounted(async () => {
   const merged = [];
   try {
     const r = await api.rechargeRecord();
-    (r?.list || []).forEach((o) => merged.push({ ...o, _label: 'Recharge', _sign: '+' }));
+    (r?.list || []).forEach((o) => merged.push({ ...o, _label: t('recharge'), _sign: '+' }));
   } catch { /* ignore */ }
   try {
     const c = await api.cashList();
-    (c?.list || []).forEach((o) => merged.push({ ...o, _label: 'Withdrawal', _sign: '−' }));
+    (c?.list || []).forEach((o) => merged.push({ ...o, _label: t('withdrawal'), _sign: '−' }));
   } catch { /* ignore */ }
   try {
     const s = await api.consumeList();
     (s?.list || []).forEach((o) => {
-      const label = CONSUME_LABELS[o.type] || o.product || 'Spending';
+      const label = CONSUME_LABELS[o.type] || o.product || t('spending');
       merged.push({ ...o, _label: label, _sign: '−' });
     });
   } catch { /* ignore */ }
@@ -42,7 +71,7 @@ onMounted(async () => {
 <!-- Faithful rebuild of the real pages/account/funding layout + scoped CSS. -->
 <template>
   <div class="funding">
-    <NavBar title="Funding Records" />
+    <NavBar :title="t('navTitle')" />
 
     <div v-if="list.length" class="list">
       <div v-for="(o, i) in list" :key="o._label + '-' + (o.id || i)" class="item">
@@ -56,7 +85,7 @@ onMounted(async () => {
 
     <div v-else class="funding_empty">
       <img src="/static/image/nodata.png" alt="" />
-      <div>No funding records</div>
+      <div>{{ t('empty') }}</div>
     </div>
   </div>
 </template>

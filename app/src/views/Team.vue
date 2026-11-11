@@ -1,9 +1,54 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'My Team',
+      rules: 'Rules',
+      teamMembers: 'Team Members',
+      people: 'people',
+      totalRewards: 'Total Rewards',
+      direct: 'Direct',
+      indirect: 'Indirect',
+      reward: 'Reward',
+      shareLink: 'Share link',
+      friendJoins: 'Friend joins',
+      earnRewards: 'Earn rewards',
+      inviteCode: 'Invite Code',
+      copy: 'Copy',
+      inviteFriends: 'Invite Friends',
+      member: 'Member',
+      noMembers: 'No team members yet',
+      copied: 'Copied',
+    },
+    hi: {
+      navTitle: 'मेरी टीम',
+      rules: 'नियम',
+      teamMembers: 'टीम सदस्य',
+      people: 'लोग',
+      totalRewards: 'कुल इनाम',
+      direct: 'प्रत्यक्ष',
+      indirect: 'अप्रत्यक्ष',
+      reward: 'इनाम',
+      shareLink: 'लिंक साझा करें',
+      friendJoins: 'दोस्त जुड़ता है',
+      earnRewards: 'इनाम कमाएं',
+      inviteCode: 'आमंत्रण कोड',
+      copy: 'कॉपी करें',
+      inviteFriends: 'दोस्तों को आमंत्रित करें',
+      member: 'सदस्य',
+      noMembers: 'अभी तक कोई टीम सदस्य नहीं',
+      copied: 'कॉपी हो गया',
+    },
+  },
+});
 
 const router = useRouter();
 const { toast } = useToast();
@@ -20,18 +65,18 @@ const totalCommission = computed(() =>
 const members = computed(() => team.value?.list || []);
 const inviteCode = computed(() => team.value?.inviteCode || '—');
 
-const steps = [
-  { icon: invImg + 'icon_Sharelink.png', title: 'Share link' },
-  { icon: invImg + 'icon_Registion.png', title: 'Friend joins' },
-  { icon: invImg + 'icon_Earnrewards.png', title: 'Earn rewards' },
-];
+const steps = computed(() => [
+  { icon: invImg + 'icon_Sharelink.png', title: t('shareLink') },
+  { icon: invImg + 'icon_Registion.png', title: t('friendJoins') },
+  { icon: invImg + 'icon_Earnrewards.png', title: t('earnRewards') },
+]);
 
 onMounted(async () => {
   try { team.value = await api.team(); } catch (e) { toast(e.message); }
 });
 
 async function copyCode() {
-  try { await navigator.clipboard.writeText(inviteCode.value); toast('Copied'); }
+  try { await navigator.clipboard.writeText(inviteCode.value); toast(t('copied')); }
   catch { toast(inviteCode.value); }
 }
 function openLevel(level) {
@@ -44,31 +89,31 @@ function openLevel(level) {
 <template>
   <div class="team">
     <header class="team_nav">
-      <NavBar title="My Team" />
-      <span class="team_nav_rule" @click="router.push('/rule')">Rules</span>
+      <NavBar :title="t('navTitle')" />
+      <span class="team_nav_rule" @click="router.push('/rule')">{{ t('rules') }}</span>
     </header>
 
     <div class="team_top">
       <div class="team_main">
         <div class="team_main_item">
-          <div class="team_main_item_title">Team Members</div>
-          <div class="team_main_item_num">{{ team?.count ?? 0 }}<span>people</span></div>
+          <div class="team_main_item_title">{{ t('teamMembers') }}</div>
+          <div class="team_main_item_num">{{ team?.count ?? 0 }}<span>{{ t('people') }}</span></div>
         </div>
         <div class="team_main_item">
-          <div class="team_main_item_title">Total Rewards</div>
+          <div class="team_main_item_title">{{ t('totalRewards') }}</div>
           <div class="team_main_item_num">{{ totalCommission }}<span>₹</span></div>
         </div>
       </div>
 
       <div class="team_personal">
-        <div class="team_personal_item">Direct<span>{{ level1.members }}</span></div>
+        <div class="team_personal_item">{{ t('direct') }}<span>{{ level1.members }}</span></div>
         <div class="team_personal_line">|</div>
-        <div class="team_personal_item">Reward ₹<span>{{ level1.commission }}</span></div>
+        <div class="team_personal_item">{{ t('reward') }} ₹<span>{{ level1.commission }}</span></div>
       </div>
       <div class="team_direct">
-        <div class="team_direct_item">Indirect<span>{{ level2.members }}</span></div>
+        <div class="team_direct_item">{{ t('indirect') }}<span>{{ level2.members }}</span></div>
         <div class="team_direct_line">|</div>
-        <div class="team_direct_item">Reward ₹<span>{{ level2.commission }}</span></div>
+        <div class="team_direct_item">{{ t('reward') }} ₹<span>{{ level2.commission }}</span></div>
       </div>
     </div>
 
@@ -80,38 +125,38 @@ function openLevel(level) {
         </div>
       </div>
       <div class="team_invite_url">
-        <div class="team_invite_url_title">Invite Code</div>
+        <div class="team_invite_url_title">{{ t('inviteCode') }}</div>
         <div class="team_invite_url_main">
           <div class="team_invite_url_main_link">{{ inviteCode }}</div>
-          <div class="team_invite_url_main_btn" @click="copyCode">Copy</div>
+          <div class="team_invite_url_main_btn" @click="copyCode">{{ t('copy') }}</div>
         </div>
       </div>
-      <button class="team_invite_button" @click="router.push('/invitation')">Invite Friends</button>
+      <button class="team_invite_button" @click="router.push('/invitation')">{{ t('inviteFriends') }}</button>
     </div>
 
     <div class="team_list">
       <div class="team_list_tab">
         <div class="team_list_tab_item" @click="openLevel('direct')">
-          <div class="team_list_tab_item_title" :class="{ item_active: activeTab === 'direct' }">Direct</div>
+          <div class="team_list_tab_item_title" :class="{ item_active: activeTab === 'direct' }">{{ t('direct') }}</div>
           <img v-if="activeTab === 'direct'" :src="downArrow" alt="" />
         </div>
         <div class="team_list_tab_item" @click="openLevel('indirect')">
-          <div class="team_list_tab_item_title" :class="{ item_active: activeTab === 'indirect' }">Indirect</div>
+          <div class="team_list_tab_item_title" :class="{ item_active: activeTab === 'indirect' }">{{ t('indirect') }}</div>
           <img v-if="activeTab === 'indirect'" :src="downArrow" alt="" />
         </div>
       </div>
 
       <div class="team_list_content">
         <div class="team_list_content_ranking">
-          <div class="item">Member</div>
-          <div class="item">Reward</div>
+          <div class="item">{{ t('member') }}</div>
+          <div class="item">{{ t('reward') }}</div>
         </div>
         <template v-if="members.length">
           <div v-for="(m, i) in members" :key="i" class="team_list_content_item">
             <div class="team_list_content_item_left">
               <div class="rank">
                 <div class="rank_user">
-                  <div class="title">{{ m.nickname || m.name || 'Member' }}</div>
+                  <div class="title">{{ m.nickname || m.name || t('member') }}</div>
                   <div class="time">{{ m.date || '' }}</div>
                 </div>
               </div>
@@ -119,7 +164,7 @@ function openLevel(level) {
             <div class="team_list_content_item_right">₹{{ m.commission || '0.00' }}</div>
           </div>
         </template>
-        <div v-else class="team_empty">No team members yet</div>
+        <div v-else class="team_empty">{{ t('noMembers') }}</div>
       </div>
     </div>
   </div>

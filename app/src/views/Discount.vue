@@ -1,15 +1,21 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
+
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: { navTitle: 'Coupons', empty: 'No coupons' },
+  hi: { navTitle: 'कूपन', empty: 'कोई कूपन नहीं' },
+} });
 </script>
 
 <!-- Faithful rebuild of the real pages/order/discount (.discount) + scoped CSS. -->
 <template>
   <div class="discount">
-    <NavBar title="Coupons" />
+    <NavBar :title="t('navTitle')" />
     <div class="discount_main">
       <div class="discount_empty">
         <img src="/static/image/nodata.png" alt="" />
-        <div class="discount_empty_text">No coupons</div>
+        <div class="discount_empty_text">{{ t('empty') }}</div>
       </div>
     </div>
   </div>
