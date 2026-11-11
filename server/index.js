@@ -28,6 +28,45 @@ function productView(p) {
   const percent = Math.min(100, Math.round((p.joined / p.total) * 100));
   return { ...p, remaining: Math.max(0, p.total - p.joined), percent };
 }
+// Rich detail used by the goods page: participants, prize tiers, winners, reviews.
+const DET_NAMES = ['rahul', 'meena', 'arjun', 'sana', 'abdul', 'babu', 'praveen', 'sultan', 'vikram', 'neha', 'rohit', 'priya', 'deepak', 'anjali'];
+const DET_AVS = ['networkimg/abdul.png', 'networkimg/babu.png', 'networkimg/behrul-islam.png', 'networkimg/praveen.png', 'networkimg/sultan.png', 'networkimg/user.png'];
+const DET_CITIES = ['Delhi', 'Mumbai', 'Pune', 'Jaipur', 'Surat', 'Patna', 'Kochi', 'Indore'];
+const DET_REVIEWS = [
+  'Genuine product and super fast delivery. Highly recommended!',
+  'Won on my 3rd try and received it within a week. Thank you ORich!',
+  'Great experience — packaging was neat and factory sealed.',
+];
+function fmtTime(ms) { return new Date(ms).toISOString().slice(0, 16).replace('T', ' '); }
+function productDetailView(p) {
+  const base = productView(p);
+  const av = (i) => store.img(DET_AVS[((i % DET_AVS.length) + DET_AVS.length) % DET_AVS.length]);
+  const now = Date.now();
+  const participants = Array.from({ length: 8 }, (_, i) => ({
+    name: DET_NAMES[(p.id * 3 + i) % DET_NAMES.length] + '***',
+    avatar: av(p.id + i),
+    shares: ((p.id * 7 + i * 13) % 50) + 1,
+    ip: 'IP ' + DET_CITIES[(p.id + i) % DET_CITIES.length],
+    time: fmtTime(now - (i + 1) * 3600 * 1000 * (1 + (i % 4))),
+  }));
+  const mv = p.marketValue;
+  const prizeTiers = [
+    { rank: 1, icon: store.img('goods/icon_Firstprize.png'), name: p.title, value: mv },
+    { rank: 2, icon: store.img('goods/icon_Secondprize.png'), name: 'Cash prize', value: Math.round(mv * 0.05) },
+    { rank: 3, icon: store.img('goods/icon_Thirdprize.png'), name: 'Cash prize', value: Math.round(mv * 0.02) },
+  ];
+  const reviews = Array.from({ length: 3 }, (_, i) => ({
+    name: DET_NAMES[(p.id + i * 5) % DET_NAMES.length] + '***',
+    avatar: av(p.id * 2 + i),
+    vip: i === 0,
+    time: new Date(now - (i + 2) * 86400 * 1000).toISOString().slice(0, 10),
+    title: p.title,
+    content: DET_REVIEWS[i % DET_REVIEWS.length],
+    images: i === 0 ? [store.img('goods/prompt.png'), store.img('goods/prompt-2.png'), store.img('goods/prompt-3.png')] : [],
+  }));
+  const winners = store.get().winners.slice(0, 3).map((w) => ({ ...w, product: p.title, cover: p.cover }));
+  return { ...base, peopleAvatars: participants.slice(0, 5).map((x) => x.avatar), participants, prizeTiers, winners, reviews };
+}
 function userView(u) {
   return {
     id: u.id, phone: u.phone, nickname: u.nickname || ('ORich' + u.phone.slice(-4)),
@@ -71,7 +110,7 @@ const userRoutes = {
   },
   '/index/duobaoitemlist': () => ok({ list: store.get().products.map(productView) }),
   '/index/duobaoitemlistnew': () => ok({ list: store.get().products.map(productView) }),
-  '/index/duobaoitemdetail': (b) => { const p = store.get().products.find((x) => x.id === Number(b.id)); return p ? ok({ item: productView(p), joinPrices: [1, 5, 10, 20, 50, 100] }) : err('Product not found'); },
+  '/index/duobaoitemdetail': (b) => { const p = store.get().products.find((x) => x.id === Number(b.id)); return p ? ok({ item: productDetailView(p), joinPrices: [1, 5, 10, 20, 50, 100] }) : err('Product not found'); },
   '/index/winnerlist': () => ok({ list: store.get().winners }),
   '/index/taskList': () => ok({ list: store.get().tasks }),
   '/index/vip': () => ok({ list: store.get().vipTiers }),
