@@ -110,5 +110,6 @@ export const api = {
   notifications: () => call('/index/notifications'),
   notifyRead: (id) => call('/index/notifyread', id ? { id } : {}),
   checkUpdate: () => call('/index/checkupdate'),
+  upload: (image) => call('/index/upload', { image }),
   track: (name, props) => call('/index/track', { name, props }).catch(() => {}),
 };

@@ -171,7 +171,7 @@ const userRoutes = {
   },
 
   '/index/logout': (b, ctx) => { delete sessions[ctx.user.token]; return ok({}, 'Logged out'); },
-  '/index/useraccount': (b, ctx) => ok({ user: userView(ctx.user.user), finance: financeSummary(ctx.user.user.id) }),
+  '/index/useraccount': (b, ctx) => { settleUser(ctx.user.user); return ok({ user: userView(ctx.user.user), finance: financeSummary(ctx.user.user.id) }); },
   '/index/userbalance': (b, ctx) => { const st = store.get().settings; return ok({ balance: rupees(ctx.user.user.balance), frozen: rupees(ctx.user.user.frozen), withdraw: { feePercent: st.withdrawFee ?? seed.withdrawConfig.feePercent, min: st.withdrawMin ?? seed.withdrawConfig.min, arrival: st.withdrawArrival ?? seed.withdrawConfig.arrival } }); },
 
   '/index/addrechargepay2': (b, ctx) => {
@@ -179,6 +179,7 @@ const userRoutes = {
     if (!amount || amount < 100) return err('Minimum recharge is ₹1');
     const u = ctx.user.user; u.balance += amount;
     const order = addOrder(u.id, 'recharge', { amount: rupees(amount), status: 'success', channel: b.channel || 'upi' });
+    creditReferral(u, amount);
     return ok({ order, balance: rupees(u.balance) }, 'Recharge successful');
   },
   '/index/addorder': (b, ctx) => {
@@ -190,6 +191,9 @@ const userRoutes = {
     if (u.balance < cost) return err('Insufficient balance, please recharge');
     u.balance -= cost; p.joined = Math.min(p.total, p.joined + shares);
     const order = addOrder(u.id, 'join', { product: p.title, shares, amount: rupees(cost), status: 'ongoing' });
+    creditReferral(u, cost);
+    if (p.joined >= p.total && p.status === 'ongoing') drawProduct(p);  // auto-draw on sellout (refunds losers)
+    store.save();
     return ok({ order, balance: rupees(u.balance) }, 'Joined successfully');
   },
   '/index/financeBuy': (b, ctx) => {
@@ -200,6 +204,7 @@ const userRoutes = {
     if (u.balance < amount) return err('Insufficient balance');
     u.balance -= amount;
     const order = addOrder(u.id, 'finance', { product: f.name, amount: rupees(amount), status: 'active' });
+    creditReferral(u, amount);
     return ok({ order, balance: rupees(u.balance) }, 'Investment confirmed');
   },
   '/index/vipBuy': (b, ctx) => {
@@ -207,8 +212,9 @@ const userRoutes = {
     if (!v) return err('Tier not found');
     const u = ctx.user.user; const cost = v.price * 100;
     if (u.balance < cost) return err('Insufficient balance');
-    u.balance -= cost; u.vip = { name: v.name, until: Date.now() + v.days * 864e5 };
+    u.balance -= cost; u.vip = { name: v.name, until: Date.now() + v.days * 864e5, since: Date.now(), lastBonus: Date.now() };
     const order = addOrder(u.id, 'vip', { product: v.name + ' VIP', amount: rupees(cost), status: 'active' });
+    creditReferral(u, cost);
     return ok({ order, balance: rupees(u.balance), vip: u.vip }, 'VIP activated');
   },
   '/index/luckyBuy': (b, ctx) => {
@@ -223,14 +229,19 @@ const userRoutes = {
   '/index/taskReceive': (b, ctx) => {
     const t = store.get().tasks.find((x) => x.id === Number(b.id));
     if (!t) return err('Task not found');
-    const u = ctx.user.user; u.balance += t.reward * 100;
-    addOrder(u.id, 'task', { product: t.title, amount: rupees(t.reward * 100), status: 'rewarded' });
+    const u = ctx.user.user;
+    const today = new Date().toISOString().slice(0, 10);
+    if (store.get().orders.some((o) => o.userId === u.id && o.type === 'task' && o.taskId === t.id && o.date === today)) return err('Already claimed today');
+    // check-in is claimable once per day; other missions require real completion.
+    if (t.type !== 'checkin' && !taskProgress(t, u).done) return err('Task not completed yet');
+    u.balance += t.reward * 100;
+    addOrder(u.id, 'task', { product: t.title, amount: rupees(t.reward * 100), status: 'rewarded', taskId: t.id });
     return ok({ balance: rupees(u.balance) }, 'Reward +₹' + t.reward);
   },
 
   '/index/ordernews': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'join') }),
   '/index/userjoin': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'join') }),
-  '/index/myFinanceList': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'finance').map(financeOrderView) }),
+  '/index/myFinanceList': (b, ctx) => { settleUser(ctx.user.user); return ok({ list: ordersOf(ctx.user.user.id, 'finance').map(financeOrderView) }); },
   '/index/luckyOrderList': (b, ctx) => ok({ list: ordersOf(ctx.user.user.id, 'lucky') }),
   '/index/mywinner': (b, ctx) => ok({ list: store.get().winners.slice(0, 2) }),
   '/index/usershare': (b, ctx) => ok({ list: store.get().winners.slice(0, 2) }),
@@ -331,6 +342,20 @@ const userRoutes = {
     store.save(); return ok({}, 'Marked read');
   },
   '/index/checkupdate': () => { const u = seed.appUpdate; return ok({ ...u, hasUpdate: u.latest !== u.version }); },
+  '/index/upload': (b) => {
+    const data = b.image || b.file || '';
+    if (!data) return err('No image provided');
+    const m = /^data:(image\/[\w+]+);base64,(.+)$/.exec(data);
+    if (!m) return ok({ url: data });   // already a URL — echo back
+    try {
+      const ext = (m[1].split('/')[1] || 'png').replace('+xml', '');
+      const dir = path.join(__dirname, 'data', 'uploads');
+      fs.mkdirSync(dir, { recursive: true });
+      const name = 'up_' + Date.now() + Math.random().toString(36).slice(2, 7) + '.' + ext;
+      fs.writeFileSync(path.join(dir, name), Buffer.from(m[2], 'base64'));
+      return ok({ url: '/uploads/' + name }, 'Uploaded');
+    } catch (e) { return err('Upload failed: ' + e.message); }
+  },
   '/index/track': (b, ctx) => {
     const s = store.get(); s.events = s.events || [];
     const uid = ctx && ctx.user && ctx.user.user ? ctx.user.user.id : null;
@@ -372,6 +397,60 @@ function localizeNotif(n, lang) {
 function localizeHelp(list, lang) {
   if (!lang || lang === 'en') return list;
   return list.map((h) => { const tr = seed.contentI18n.help[h.id] && seed.contentI18n.help[h.id][lang]; return tr ? { ...h, ...tr } : h; });
+}
+
+// --- real business logic: referral commission, settlement, auto-draw ---
+// Credit referral commission to the spender's direct (8%) and indirect (3%) inviters.
+function creditReferral(spender, amountPaise) {
+  if (!spender.invitedBy || !amountPaise) return;
+  const s = store.get();
+  const direct = s.users.find((u) => u.inviteCode === spender.invitedBy);
+  if (!direct) return;
+  const c1 = Math.round(amountPaise * 0.08); direct.balance += c1;
+  addOrder(direct.id, 'rebate', { product: 'Commission (direct)', amount: rupees(c1), status: 'rewarded', level: 'Direct', from: spender.id });
+  const indirect = direct.invitedBy && s.users.find((u) => u.inviteCode === direct.invitedBy);
+  if (indirect) { const c2 = Math.round(amountPaise * 0.03); indirect.balance += c2; addOrder(indirect.id, 'rebate', { product: 'Commission (indirect)', amount: rupees(c2), status: 'rewarded', level: 'Indirect', from: spender.id }); }
+}
+// Draw a product when it sells out: pick a winner (weighted by shares), refund the rest.
+function drawProduct(p) {
+  const s = store.get();
+  p.status = 'done';
+  const parts = s.orders.filter((o) => o.type === 'join' && o.product === p.title && o.status === 'ongoing');
+  if (!parts.length) return;
+  const pool = []; parts.forEach((o) => { for (let i = 0; i < (o.shares || 1); i++) pool.push(o); });
+  const win = pool[Math.floor(Math.random() * pool.length)];
+  parts.forEach((o) => {
+    if (o === win) { o.status = 'won'; }
+    else { o.status = 'refunded'; const u = s.users.find((x) => x.id === o.userId); if (u) u.balance += Math.round(Number(o.amount) * 100); }
+  });
+  const winner = s.users.find((u) => u.id === win.userId);
+  const nick = (winner && winner.nickname) || ('ORich' + String(winner && winner.phone || '').slice(-4));
+  s.winners.unshift({ id: store.nextId('winner'), name: nick.slice(0, 4) + '***', product: p.title, avatar: (winner && winner.avatar) || store.img('home/img_Winning.png'), code: 'OR' + Date.now().toString().slice(-8), shares: win.shares || 1, date: new Date().toISOString().slice(0, 10), images: [] });
+}
+// Lazy settlement for a user: finance maturity payout + VIP daily bonus accrual.
+function settleUser(u) {
+  const s = store.get(); const nowT = Date.now(); let changed = false;
+  for (const o of s.orders) {
+    if (o.userId !== u.id || o.type !== 'finance' || o.paid) continue;
+    const f = s.finances.find((x) => x.name === o.product); if (!f) continue;
+    if (daysBetween(o.date) + 1 >= f.days) {
+      const amt = Math.round(Number(o.amount) * 100); const earn = Math.round(amt * (f.rate / 100) * f.days);
+      u.balance += amt + earn; o.paid = true; o.status = 'completed';
+      addOrder(u.id, 'finance_payout', { product: o.product + ' payout', amount: rupees(amt + earn), status: 'success' });
+      changed = true;
+    }
+  }
+  if (u.vip && u.vip.until > nowT) {
+    const tier = s.vipTiers.find((v) => v.name === u.vip.name);
+    const last = u.vip.lastBonus || u.vip.since || nowT;
+    const days = Math.floor((nowT - last) / 864e5);
+    if (tier && days >= 1) {
+      const bonus = days * tier.dailyBonus * 100; u.balance += bonus; u.vip.lastBonus = last + days * 864e5;
+      addOrder(u.id, 'vip_bonus', { product: 'VIP daily bonus ×' + days, amount: rupees(bonus), status: 'rewarded' });
+      changed = true;
+    }
+  }
+  if (changed) store.save();
 }
 
 // --- data-wiring helpers (real values for the UI sections) ---
@@ -426,11 +505,10 @@ function teamOf(user) {
   const direct = s.users.filter((u) => u.invitedBy && u.invitedBy === user.inviteCode);
   const directCodes = new Set(direct.map((u) => u.inviteCode));
   const indirect = s.users.filter((u) => u.invitedBy && directCodes.has(u.invitedBy));
-  const reward = (arr, rate) => arr.reduce((a, u) => a + (s.orders.filter((o) => o.userId === u.id && (o.type === 'join' || o.type === 'recharge')).reduce((x, o) => x + Number(o.amount) || 0, 0)) * rate, 0);
   const view = (u) => ({ id: u.id, name: (u.nickname || ('ORich' + String(u.phone).slice(-4))), avatar: u.avatar, phone: String(u.phone).replace(/(\d{2})\d+(\d{2})/, '$1****$2'), date: new Date(u.createdAt).toISOString().slice(0, 10), vip: !!u.vip });
   return {
     direct: direct.map(view), indirect: indirect.map(view),
-    directReward: reward(direct, 0.08).toFixed(2), indirectReward: reward(indirect, 0.03).toFixed(2),
+    directReward: rebateTotal(user.id, 'Direct'), indirectReward: rebateTotal(user.id, 'Indirect'),
   };
 }
 // Lucky-ball game round: 3-minute cadence, next boundary = round close.
@@ -451,19 +529,14 @@ function financeHistory(id) {
   const n = Math.min(f.days, 7);
   return Array.from({ length: n }, (_, i) => ({ day: i + 1, date: new Date(Date.now() - i * 864e5).toISOString().slice(0, 10), earning: (f.min * (f.rate / 100)).toFixed(2) }));
 }
-// Referral commission records for the user (from invitees' real spend).
+// Referral commission records = the user's actual credited 'rebate' orders.
 function rebateList(user) {
-  const s = store.get();
-  const rows = [];
-  const direct = s.users.filter((u) => u.invitedBy === user.inviteCode);
-  const directCodes = new Set(direct.map((u) => u.inviteCode));
-  const indirect = s.users.filter((u) => directCodes.has(u.invitedBy));
-  const add = (arr, level, rate) => arr.forEach((u) => {
-    const spend = s.orders.filter((o) => o.userId === u.id && (o.type === 'join' || o.type === 'recharge')).reduce((a, o) => a + (Number(o.amount) || 0), 0);
-    if (spend > 0) rows.push({ name: u.nickname || ('ORich' + String(u.phone).slice(-4)), level, date: new Date(u.createdAt).toISOString().slice(0, 10), amount: (spend * rate).toFixed(2) });
-  });
-  add(direct, 'Direct', 0.08); add(indirect, 'Indirect', 0.03);
-  return rows;
+  return store.get().orders.filter((o) => o.userId === user.id && o.type === 'rebate').reverse()
+    .map((o) => ({ name: 'Referral commission', level: o.level || 'Direct', date: o.date, amount: o.amount }));
+}
+function rebateTotal(userId, level) {
+  return store.get().orders.filter((o) => o.userId === userId && o.type === 'rebate' && (!level || o.level === level))
+    .reduce((a, o) => a + (Number(o.amount) || 0), 0).toFixed(2);
 }
 // Invite leaderboard (server-side aggregate; demo values when no real data).
 function inviteTop() {
@@ -643,6 +716,12 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, handler(body, { admin }));
     }
 
+    // User-uploaded images.
+    if (url.pathname.startsWith('/uploads/') && req.method === 'GET') {
+      const updir = path.join(__dirname, 'data', 'uploads');
+      if (serveStatic(res, updir, url.pathname.replace('/uploads', '') || '/')) return;
+      return send(res, 404, err('Not found'));
+    }
     // Static assets / SPA (production): everything that isn't the JSON API.
     if (!url.pathname.startsWith('/api/') && req.method === 'GET') {
       if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) {
