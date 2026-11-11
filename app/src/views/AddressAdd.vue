@@ -1,16 +1,18 @@
 <script setup>
-import { reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { reactive, ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
 
 const router = useRouter();
+const route = useRoute();
 const { toast } = useToast();
 const { t } = useI18n({ useScope: 'local', messages: {
   en: {
     navTitle: 'Add Address',
+    editTitle: 'Edit Address',
     name: 'Name',
     namePh: 'Receiver name',
     phone: 'Phone',
@@ -25,6 +27,7 @@ const { t } = useI18n({ useScope: 'local', messages: {
   },
   hi: {
     navTitle: 'पता जोड़ें',
+    editTitle: 'पता संपादित करें',
     name: 'नाम',
     namePh: 'प्राप्तकर्ता का नाम',
     phone: 'फ़ोन',
@@ -37,16 +40,49 @@ const { t } = useI18n({ useScope: 'local', messages: {
     errFill: 'नाम और पता भरें',
     saved: 'सेव हो गया',
   },
+  zh: {
+    navTitle: '添加地址',
+    editTitle: '编辑地址',
+    name: '姓名',
+    namePh: '收货人姓名',
+    phone: '电话',
+    phonePh: '电话号码',
+    pincode: '邮编',
+    pincodePh: '邮政编码',
+    address: '地址',
+    addressPh: '门牌、街道、城市',
+    save: '保存地址',
+    errFill: '请填写姓名和地址',
+    saved: '已保存',
+  },
 } });
 const f = reactive({ name: '', phone: '', pincode: '', address: '' });
 const busy = ref(false);
+const editId = ref(route.query.id || null);
+const title = computed(() => (editId.value ? t('editTitle') : t('navTitle')));
+
+onMounted(async () => {
+  if (!editId.value) return;
+  try {
+    const found = ((await api.addressList()).list || []).find((a) => String(a.id) === String(editId.value));
+    if (found) {
+      f.name = found.name || '';
+      f.phone = found.phone || '';
+      f.address = found.line || '';
+    }
+  } catch (e) { toast(e.message); }
+});
 
 async function save() {
   if (!f.name || !f.address) return toast(t('errFill'));
   busy.value = true;
   const line = [f.address, f.pincode].filter(Boolean).join(', ');
   try {
-    await api.addressAdd({ name: f.name, phone: f.phone, pincode: f.pincode, line });
+    if (editId.value) {
+      await api.addressEdit({ id: editId.value, name: f.name, phone: f.phone, line });
+    } else {
+      await api.addressAdd({ name: f.name, phone: f.phone, pincode: f.pincode, line });
+    }
     toast(t('saved'));
     router.back();
   } catch (e) { toast(e.message); } finally { busy.value = false; }
@@ -56,7 +92,7 @@ async function save() {
 <!-- Faithful rebuild of the real pages/address/add (.add) + scoped CSS. -->
 <template>
   <div class="add">
-    <NavBar :title="t('navTitle')" />
+    <NavBar :title="title" />
 
     <div class="content">
       <div class="receiver">

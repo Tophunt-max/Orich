@@ -167,6 +167,28 @@ const notifications = [
 // App version / OTA update info (DCloud OTA parity).
 const appUpdate = { version: '2.1.4', latest: '2.1.4', url: 'https://orich.in/', notes: 'Bug fixes and performance improvements.' };
 
+// Server-side translations (en/hi/zh) for dynamic content, so the app shows
+// notices/FAQ/rules in the selected language — like the real multi-language app.
+const contentI18n = {
+  notifications: {
+    1: { hi: { title: 'लकी ड्रॉ का परिणाम', body: 'rahul*** ने अभी iPhone 14 128GB जीता। अगला ड्रॉ जल्द बंद होगा — अभी शामिल हों!' }, zh: { title: '抽奖结果', body: 'rahul*** 刚刚赢得了 iPhone 14 128GB。下一期即将截止——快来参与！' } },
+    2: { hi: { title: 'VIP गोल्ड आज -20%', body: 'आज Gold VIP सक्रिय करें और 20% छूट के साथ ज़्यादा डेली बोनस पाएँ।' }, zh: { title: 'VIP 金卡今日 -20%', body: '今天开通金卡 VIP，立享 8 折及更高每日奖金。' } },
+    3: { hi: { title: 'ऑर्डर अपडेट', body: 'आपकी ग्रुप-बाय एंट्री कन्फर्म हो गई है। ड्रॉ होने पर हम आपको सूचित करेंगे।' }, zh: { title: '订单更新', body: '您的拼团参与已确认。开奖后我们会通知您。' } },
+    4: { hi: { title: 'ORich में आपका स्वागत है', body: 'वॉलेट रिचार्ज करें, ₹1 ग्रुप-बाय में शामिल हों और बड़ा जीतें। दोस्तों को बुलाकर कमीशन कमाएँ।' }, zh: { title: '欢迎来到 ORich', body: '充值钱包，参与 1₹ 拼团赢大奖。邀请好友赚取佣金。' } },
+  },
+  help: {
+    1: { hi: { q: 'ग्रुप-बाय कैसे काम करता है?', a: 'किसी उत्पाद के एक या अधिक शेयर खरीदें। सभी शेयर बिकने पर एक विजेता चुना जाता है और उसे उत्पाद मिलता है। जो नहीं जीते उन्हें पूरा रिफंड मिलता है।' }, zh: { q: '拼团如何运作？', a: '购买一个或多个份额。售罄后抽出一名中奖者获得商品，未中奖者全额退款。' } },
+    2: { hi: { q: 'रिचार्ज कैसे करें?', a: 'Account → Wallet → Recharge खोलें, राशि और भुगतान चैनल चुनें, फिर भुगतान पूरा करें।' }, zh: { q: '如何充值？', a: '打开 账户 → 钱包 → 充值，选择金额和支付渠道后完成支付。' } },
+    3: { hi: { q: 'VIP मेंबरशिप क्या है?', a: 'एक सशुल्क सदस्यता जो रोज़ का बोनस, ज़्यादा रेफरल रिबेट, तेज़ निकासी और खास ड्रॉ देती है।' }, zh: { q: '什么是 VIP 会员？', a: '付费会员，享每日奖金、更高推荐返利、更快提现及专属抽奖。' } },
+    4: { hi: { q: 'रेफरल का भुगतान कैसे होता है?', a: 'अपना इनवाइट कोड शेयर करें। जब आपका दोस्त ग्रुप-बाय में शामिल हो या रिचार्ज करे, आपको कमीशन मिलता है।' }, zh: { q: '推荐奖励如何发放？', a: '分享您的邀请码。好友参团或充值时，您即可获得佣金。' } },
+    5: { hi: { q: 'निकासी में कितना समय लगता है?', a: 'स्वीकृति के बाद निकासी 1 कार्यदिवस (T+1) में आपके बैंक खाते में प्रोसेस होती है।' }, zh: { q: '提现需要多久？', a: '审核通过后，提现将在 1 个工作日（T+1）内到账。' } },
+  },
+  rules: {
+    hi: ['अपना यूनिक इनवाइट लिंक या कोड दोस्तों के साथ शेयर करें।', 'आपका दोस्त आपके कोड से रजिस्टर करता है और आपका डायरेक्ट रेफरल बनता है।', 'जब भी वे ग्रुप-बाय में शामिल हों या रिचार्ज करें, आपको कमीशन मिलता है।', 'आपके रेफरल द्वारा बुलाए दोस्त इनडायरेक्ट रेफरल बनते हैं और आपको बोनस दिलाते हैं।'],
+    zh: ['与好友分享您的专属邀请链接或邀请码。', '好友使用您的邀请码注册，成为您的直接推荐。', '每当他们参团或充值时，您都能获得佣金。', '您的推荐人邀请的好友成为间接推荐，也为您带来奖励。'],
+  },
+};
+
 // A single demo account keyed by token.
 function freshUser() {
   return {
@@ -183,4 +205,4 @@ function freshUser() {
   };
 }
 
-module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, vipConfig, luckyDraws, prizes, games, categories, helpItems, inviteRules, payChannels, withdrawConfig, notifications, appUpdate, freshUser, img };
+module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, vipConfig, luckyDraws, prizes, games, categories, helpItems, inviteRules, payChannels, withdrawConfig, notifications, appUpdate, contentI18n, freshUser, img };

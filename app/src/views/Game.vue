@@ -36,6 +36,12 @@ const { t } = useI18n({
       rule3: '3. Green and Red numbers pay 2x; Violet numbers pay more. Matching the exact number pays the most.',
       rule4: '4. Entries cost ₹{amount} and are settled to your balance automatically.',
       ruleResponsible: 'Play responsibly. Bet only what you can afford.',
+      instantDraws: 'Instant Lucky Draws',
+      prize: 'Prize',
+      sold: 'sold',
+      join: 'Join',
+      noDraws: 'No lucky draws available',
+      joinFailed: 'Could not join draw',
     },
     hi: {
       luckyBall: 'लकी बॉल',
@@ -61,6 +67,20 @@ const { t } = useI18n({
       rule3: '3. हरे और लाल नंबर 2 गुना देते हैं; बैंगनी नंबर अधिक देते हैं। सटीक नंबर मिलाने पर सबसे अधिक मिलता है।',
       rule4: '4. प्रत्येक एंट्री की लागत ₹{amount} है और यह स्वतः आपके बैलेंस में सेटल हो जाती है।',
       ruleResponsible: 'जिम्मेदारी से खेलें। केवल उतना ही दांव लगाएं जितना आप वहन कर सकें।',
+      instantDraws: 'इंस्टेंट लकी ड्रॉ',
+      prize: 'इनाम',
+      sold: 'बिके',
+      join: 'शामिल हों',
+      noDraws: 'कोई लकी ड्रॉ उपलब्ध नहीं',
+      joinFailed: 'ड्रॉ में शामिल नहीं हो सके',
+    },
+    zh: {
+      instantDraws: '即时幸运抽奖',
+      prize: '奖品',
+      sold: '已售',
+      join: '参与',
+      noDraws: '暂无幸运抽奖',
+      joinFailed: '无法参与抽奖',
     },
   },
 });
@@ -77,6 +97,46 @@ let timer = null;
 
 // Past draw results (from api.lotteryResult).
 const results = ref([]);
+
+// Instant lucky-draw rounds (from api.luckyList).
+const luckyDraws = ref([]);
+const luckyBusy = ref(false);
+
+async function loadLucky() {
+  try {
+    const data = await api.luckyList();
+    luckyDraws.value = Array.isArray(data?.list) ? data.list : [];
+  } catch { luckyDraws.value = []; }
+}
+
+// Percent sold for a draw's progress bar, clamped to 0-100.
+function soldPercent(draw) {
+  const pool = Number(draw?.pool) || 0;
+  const sold = Number(draw?.sold) || 0;
+  if (pool <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((sold / pool) * 100)));
+}
+
+async function joinLucky(draw) {
+  if (luckyBusy.value) return;
+  if (!auth.isLoggedIn) {
+    router.push('/login');
+    return;
+  }
+  const id = draw?.id;
+  if (id == null) return;
+  luckyBusy.value = true;
+  try {
+    const data = await api.luckyBuy(id);
+    await auth.refresh();
+    toast(data?.msg || (t('join') + ' · ' + (draw?.title || '')));
+    await loadLucky();
+  } catch (e) {
+    toast(e.message || t('joinFailed'));
+  } finally {
+    luckyBusy.value = false;
+  }
+}
 
 // Fixed bet unit for an entry.
 const amount = ref(1);
@@ -134,7 +194,7 @@ async function loadResults() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadTime(), loadResults()]);
+  await Promise.all([loadTime(), loadResults(), loadLucky()]);
   if (auth.isLoggedIn) await auth.refresh();
   timer = setInterval(() => {
     if (remaining.value > 0) {
@@ -262,6 +322,36 @@ async function place({ color, number = null }) {
       <div v-if="!results.length" class="game_list_empty">{{ t('noRecords') }}</div>
     </div>
 
+    <!-- Instant Lucky Draws: instant lucky-draw rounds from the backend -->
+    <div class="lucky">
+      <div class="lucky_head">{{ t('instantDraws') }}</div>
+      <div v-if="luckyDraws.length" class="lucky_grid">
+        <div v-for="draw in luckyDraws" :key="draw.id" class="lucky_card">
+          <div class="lucky_card_cover">
+            <img v-if="draw.cover" :src="draw.cover" :alt="draw.title || ''" />
+          </div>
+          <div class="lucky_card_body">
+            <div class="lucky_card_title">{{ draw.title }}</div>
+            <div v-if="draw.prize" class="lucky_card_prize">{{ t('prize') }}: {{ draw.prize }}</div>
+            <div class="lucky_card_bar">
+              <div class="lucky_card_bar_fill" :style="{ width: soldPercent(draw) + '%' }"></div>
+            </div>
+            <div class="lucky_card_meta">
+              <span class="lucky_card_sold">{{ Number(draw.sold) || 0 }}/{{ Number(draw.pool) || 0 }} {{ t('sold') }}</span>
+              <span class="lucky_card_pct">{{ soldPercent(draw) }}%</span>
+            </div>
+            <div class="lucky_card_foot">
+              <span class="lucky_card_ticket">₹{{ draw.ticket }}</span>
+              <button class="lucky_card_btn" :class="{ unable: luckyBusy }" :disabled="luckyBusy" @click="joinLucky(draw)">
+                {{ t('join') }} ₹{{ draw.ticket }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="game_list_empty">{{ t('noDraws') }}</div>
+    </div>
+
     <div v-if="showRule" class="mask" @click.self="showRule = false">
       <div class="game_rule_wrap">
         <div class="game_rule">
@@ -345,6 +435,25 @@ async function place({ color, number = null }) {
 .game .game_record .game_record_period { color: #17273a; }
 .game .game_record .game_record_number { margin-left: auto; margin-right: 12px; font-weight: 700; color: #17273a; }
 .game .game_record .game_record_dot { width: 14px; height: 14px; border-radius: 50%; }
+
+/* Instant Lucky Draws */
+.game .lucky { margin-top: 13px; background: #fff; padding: 16px 12px 20px; }
+.game .lucky .lucky_head { font-size: 16px; font-weight: 700; color: #17273a; margin-bottom: 14px; }
+.game .lucky .lucky_grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.game .lucky .lucky_card { width: calc(50% - 6px); background: #fff; border: .5px solid #ececec; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px 0 rgba(0,0,0,.05); display: flex; flex-direction: column; }
+.game .lucky .lucky_card_cover { width: 100%; height: 110px; background: #f5f5f5; }
+.game .lucky .lucky_card_cover img { width: 100%; height: 100%; object-fit: cover; }
+.game .lucky .lucky_card_body { padding: 9px 10px 11px; }
+.game .lucky .lucky_card_title { font-size: 14px; font-weight: 700; color: #17273a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game .lucky .lucky_card_prize { margin-top: 3px; font-size: 12px; color: #8a8a8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game .lucky .lucky_card_bar { margin-top: 9px; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+.game .lucky .lucky_card_bar_fill { height: 100%; background: #ee5016; border-radius: 3px; transition: width .3s ease; }
+.game .lucky .lucky_card_meta { margin-top: 5px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #b9b9b9; }
+.game .lucky .lucky_card_meta .lucky_card_pct { color: #ee5016; font-weight: 500; }
+.game .lucky .lucky_card_foot { margin-top: 9px; display: flex; align-items: center; justify-content: space-between; }
+.game .lucky .lucky_card_ticket { font-size: 16px; font-weight: 700; color: #ff5c5c; }
+.game .lucky .lucky_card_btn { padding: 0 10px; height: 30px; line-height: 30px; background: #ee5016; color: #fff; border: none; border-radius: 99px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.game .lucky .lucky_card_btn.unable { background: #b9b9b9 !important; }
 
 /* Center the rule modal within the 375 frame (not the full viewport). */
 .mask { position: fixed; left: 50%; top: 0; transform: translateX(-50%); z-index: 99999; display: flex; align-items: center; justify-content: center; width: 100%; max-width: var(--maxw); height: 100vh; background: rgba(0,0,0,.6); }

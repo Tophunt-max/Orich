@@ -39,24 +39,47 @@ const hh = computed(() => String(Math.floor(remainSec.value / 3600)).padStart(2,
 const mm = computed(() => String(Math.floor(remainSec.value / 60) % 60).padStart(2, '0'));
 const ss = computed(() => String(remainSec.value % 60).padStart(2, '0'));
 
+const LANG_ORDER = ['en', 'hi', 'zh'];
+const langAbbr = computed(() => ({ en: 'EN', hi: 'हिं', zh: '中' }[locale.value] || 'EN'));
 function toggleLang() {
-  locale.value = locale.value === 'en' ? 'hi' : 'en';
-  localStorage.setItem('orich_lang', locale.value);
+  const n = LANG_ORDER[(LANG_ORDER.indexOf(locale.value) + 1) % LANG_ORDER.length];
+  locale.value = n;
+  localStorage.setItem('orich_lang', n);
 }
 function go(key) {
   const map = { recharge: '/recharge', invite: '/invitation', orders: '/orders', support: '/help', task: '/tasks', vip: '/vip' };
   router.push(map[key] || '/home');
 }
 
-onMounted(async () => {
-  try {
-    data.value = await api.home();
-  } finally { loading.value = false; }
+async function loadHome() {
+  try { data.value = await api.home(); } finally { loading.value = false; }
   try { unread.value = (await api.notifications()).unread || 0; } catch { /* ignore */ }
+}
+onMounted(async () => {
+  await loadHome();
   api.track('home_view');
   timer = setInterval(() => { now.value = Date.now(); }, 1000);
 });
 onUnmounted(() => { if (timer) clearInterval(timer); });
+
+// Pull-to-refresh (real home has enablePullDownRefresh).
+const pull = ref(0);
+const refreshing = ref(false);
+let startY = 0;
+function onTouchStart(e) { if (window.scrollY <= 0) startY = e.touches[0].clientY; else startY = -1; }
+function onTouchMove(e) {
+  if (startY < 0 || refreshing.value) return;
+  const d = e.touches[0].clientY - startY;
+  if (d > 0 && window.scrollY <= 0) pull.value = Math.min(80, d * 0.5);
+}
+async function onTouchEnd() {
+  if (pull.value > 55 && !refreshing.value) {
+    refreshing.value = true; pull.value = 40;
+    await loadHome();
+    refreshing.value = false;
+  }
+  pull.value = 0; startY = 0;
+}
 
 const inr = (n) => Number(n).toLocaleString('en-IN');
 </script>
@@ -65,7 +88,8 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
      winner marquee, 1₹ group-buy list, invite banner, finance carousel, Hot Picks + High-value
      horizontal lists, and the categorized bottom list (ltab + litem). -->
 <template>
-  <div class="home">
+  <div class="home" @touchstart.passive="onTouchStart" @touchmove.passive="onTouchMove" @touchend="onTouchEnd">
+    <div v-if="pull > 0" class="ptr" :style="{ height: pull + 'px' }">{{ refreshing ? t('common.loading') : '↓' }}</div>
     <div class="home-background" :style="{ backgroundImage: `url(${data?.banners?.[0] || '/static/image/home/bg_homepage.png'})` }"></div>
 
     <!-- download top bar -->
@@ -82,7 +106,7 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
     <div class="nav-logo">
       <span class="logo-badge">O</span><span class="logo-word">ORich</span>
       <span class="home-bell" @click="router.push('/notifications')">🔔<i v-if="unread" class="badge">{{ unread > 99 ? '99+' : unread }}</i></span>
-      <span class="home-lang" @click="toggleLang">{{ locale === 'en' ? 'हिं' : 'EN' }}</span>
+      <span class="home-lang" @click="toggleLang">{{ langAbbr }}</span>
     </div>
 
     <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
@@ -262,6 +286,7 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
 .logo-badge { width: 26px; height: 26px; border-radius: 7px; background: #ee5016; color: #fff; font-weight: 800; font-size: 17px; display: flex; align-items: center; justify-content: center; }
 .logo-word { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
 .home-lang { position: absolute; right: 15px; background: rgba(255,255,255,0.25); color: #fff; border-radius: 12px; padding: 3px 10px; font-size: 12px; }
+.ptr { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; overflow: hidden; transition: height .15s; }
 .home-bell { position: absolute; right: 56px; font-size: 18px; line-height: 1; cursor: pointer; }
 .home-bell .badge { position: absolute; top: -6px; right: -8px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: #ff5c5c; color: #fff; font-size: 10px; line-height: 15px; text-align: center; font-style: normal; }
 .loading { position: relative; z-index: 2; text-align: center; color: #fff; padding: 40px; }

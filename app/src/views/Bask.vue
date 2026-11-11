@@ -19,6 +19,7 @@ const { t } = useI18n({ useScope: 'local', messages: {
     submit: 'Submit',
     promptShare: 'Write something to share',
     submitted: 'Submitted for review',
+    submittedWithPhotos: 'Submitted for review with {n} photo(s)',
   },
   hi: {
     navTitle: 'एक पोस्ट करें',
@@ -31,6 +32,20 @@ const { t } = useI18n({ useScope: 'local', messages: {
     submit: 'सबमिट करें',
     promptShare: 'शेयर करने के लिए कुछ लिखें',
     submitted: 'समीक्षा के लिए सबमिट किया गया',
+    submittedWithPhotos: '{n} फ़ोटो के साथ समीक्षा के लिए सबमिट किया गया',
+  },
+  zh: {
+    navTitle: '晒单',
+    shopTitle: '展示您的中奖商品，激励更多人参与！',
+    titlePh: '添加标题',
+    contentPh: '分享您是如何中奖的以及您的感受……',
+    tipsBefore: '最多添加',
+    tipsAfter: '张照片',
+    addPhoto: '添加照片',
+    submit: '提交',
+    promptShare: '写点内容来分享',
+    submitted: '已提交审核',
+    submittedWithPhotos: '已提交审核，含 {n} 张照片',
   },
 } });
 const title = ref('');
@@ -38,11 +53,19 @@ const content = ref('');
 const images = ref([]);
 const busy = ref(false);
 
+const MAX_IMAGES = 6;
+
 function pick(e) {
   const files = Array.from(e.target.files || []);
   for (const f of files) {
-    if (images.value.length >= 6) break;
-    images.value.push(URL.createObjectURL(f));
+    if (images.value.length >= MAX_IMAGES) break;
+    if (!f || !String(f.type || '').startsWith('image/')) continue;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (images.value.length >= MAX_IMAGES) return;
+      if (reader.result) images.value.push(reader.result);
+    };
+    reader.readAsDataURL(f);
   }
   e.target.value = '';
 }
@@ -51,7 +74,8 @@ function remove(i) { images.value.splice(i, 1); }
 function submit() {
   if (!content.value.trim()) return toast(t('promptShare'));
   busy.value = true;
-  toast(t('submitted'));
+  const n = images.value.length;
+  toast(n ? t('submittedWithPhotos', { n }) : t('submitted'));
   setTimeout(() => { busy.value = false; router.back(); }, 700);
 }
 </script>

@@ -7,10 +7,12 @@ const BASE = import.meta.env.VITE_API_BASE || '/api';
 
 export async function call(endpoint, body = {}) {
   const token = localStorage.getItem('orich_token') || '';
+  const lang = localStorage.getItem('orich_lang') || 'en';
   const res = await fetch(BASE + endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      lang,
       ...(token ? { token } : {}),
     },
     body: JSON.stringify(body),

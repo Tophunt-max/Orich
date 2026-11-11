@@ -13,6 +13,7 @@ const { t } = useI18n({ useScope: 'local', messages: {
     navTitle: 'Addresses',
     empty: 'No address yet',
     defaultAddr: 'Default address',
+    edit: 'Edit',
     delete: 'Delete',
     addNew: '+ Add new address',
     removed: 'Removed',
@@ -22,10 +23,21 @@ const { t } = useI18n({ useScope: 'local', messages: {
     navTitle: 'पते',
     empty: 'अभी कोई पता नहीं',
     defaultAddr: 'डिफ़ॉल्ट पता',
+    edit: 'संपादित करें',
     delete: 'हटाएँ',
     addNew: '+ नया पता जोड़ें',
     removed: 'हटा दिया गया',
     defaultUpdated: 'डिफ़ॉल्ट अपडेट हुआ',
+  },
+  zh: {
+    navTitle: '地址',
+    empty: '暂无地址',
+    defaultAddr: '默认地址',
+    edit: '编辑',
+    delete: '删除',
+    addNew: '+ 添加新地址',
+    removed: '已删除',
+    defaultUpdated: '默认地址已更新',
   },
 } });
 const list = ref([]);
@@ -69,7 +81,10 @@ async function setDefault(a) {
           <div class="bottom-circle"></div>
           <span>{{ t('defaultAddr') }}</span>
         </div>
-        <span class="delete" @click="del(a.id)">{{ t('delete') }}</span>
+        <div class="bottom-actions">
+          <span class="edit" @click.stop="router.push('/address/add?id=' + a.id)">{{ t('edit') }}</span>
+          <span class="delete" @click="del(a.id)">{{ t('delete') }}</span>
+        </div>
       </div>
     </div>
 
@@ -93,6 +108,8 @@ async function setDefault(a) {
 .bottom-radio .bottom-circle { width: 17px; height: 17px; margin-right: 6px; border: 1px solid #b9b9b9; border-radius: 50%; }
 .bottom-select { color: #ee5016; }
 .bottom-select .bottom-circle { background: #ee5016; border: 1px solid #ee5016; border-radius: 50%; }
+.bottom-actions { display: flex; align-items: center; gap: 18px; }
+.edit { font-size: 14px; font-weight: 400; color: #ee5016; }
 .delete { font-size: 14px; font-weight: 400; color: #17273a; }
 .addbtn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 300px; height: 45px; background: #ee5016; color: #fff; border-radius: 4px; font-size: 16px; font-weight: 700; }
 </style>

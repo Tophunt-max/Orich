@@ -35,7 +35,7 @@ function freshState() {
     },
     users: [],   // { id, phone, nickname, avatar, balance, frozen, inviteCode, teamCount, invitedBy, createdAt }
     orders: [],  // { id, userId, type, product, shares, amount, status, date }
-    admins: [{ username: 'admin', password: 'admin123', name: 'Administrator' }],
+    admins: [{ username: process.env.ADMIN_USER || 'admin', password: process.env.ADMIN_PASS || 'admin123', name: 'Administrator' }],
     seq: { user: 0, order: 0, product: seed.products.length, winner: 200, finance: seed.finances.length, vip: seed.vipTiers.length, lucky: seed.luckyDraws.length },
   };
 }
