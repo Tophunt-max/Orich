@@ -9,6 +9,7 @@ const { t, locale } = useI18n();
 const data = ref(null);
 const loading = ref(true);
 const showDownload = ref(true);
+const unread = ref(0);
 
 // category tabs for the bottom list come from the API (data.categories).
 const cats = computed(() => (data.value?.categories || []));
@@ -51,6 +52,8 @@ onMounted(async () => {
   try {
     data.value = await api.home();
   } finally { loading.value = false; }
+  try { unread.value = (await api.notifications()).unread || 0; } catch { /* ignore */ }
+  api.track('home_view');
   timer = setInterval(() => { now.value = Date.now(); }, 1000);
 });
 onUnmounted(() => { if (timer) clearInterval(timer); });
@@ -78,6 +81,7 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
 
     <div class="nav-logo">
       <span class="logo-badge">O</span><span class="logo-word">ORich</span>
+      <span class="home-bell" @click="router.push('/notifications')">🔔<i v-if="unread" class="badge">{{ unread > 99 ? '99+' : unread }}</i></span>
       <span class="home-lang" @click="toggleLang">{{ locale === 'en' ? 'हिं' : 'EN' }}</span>
     </div>
 
@@ -258,6 +262,8 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
 .logo-badge { width: 26px; height: 26px; border-radius: 7px; background: #ee5016; color: #fff; font-weight: 800; font-size: 17px; display: flex; align-items: center; justify-content: center; }
 .logo-word { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
 .home-lang { position: absolute; right: 15px; background: rgba(255,255,255,0.25); color: #fff; border-radius: 12px; padding: 3px 10px; font-size: 12px; }
+.home-bell { position: absolute; right: 56px; font-size: 18px; line-height: 1; cursor: pointer; }
+.home-bell .badge { position: absolute; top: -6px; right: -8px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: #ff5c5c; color: #fff; font-size: 10px; line-height: 15px; text-align: center; font-style: normal; }
 .loading { position: relative; z-index: 2; text-align: center; color: #fff; padding: 40px; }
 
 /* download top bar */

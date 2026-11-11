@@ -19,6 +19,7 @@ export const useAuth = defineStore('auth', {
       const data = await api.login(phone, code, invite);
       this.setToken(data.token);
       this.user = data.user;
+      api.track('login', { phone });
       return data.user;
     },
     async refresh() {

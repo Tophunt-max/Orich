@@ -55,6 +55,9 @@ const COLLECTIONS = {
   helpItems: { label: 'FAQ', fields: [
     { k: 'category', t: 'text' }, { k: 'q', t: 'text' }, { k: 'a', t: 'text' }, { k: 'icon', t: 'text' },
   ] },
+  notifications: { label: 'Notifications', fields: [
+    { k: 'type', t: 'select', opts: ['winner', 'promo', 'order', 'system'] }, { k: 'title', t: 'text' }, { k: 'body', t: 'text' }, { k: 'date', t: 'text' },
+  ] },
 };
 
 const nav = [

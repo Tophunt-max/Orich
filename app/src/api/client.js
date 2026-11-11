@@ -104,4 +104,9 @@ export const api = {
   bankEdit: (payload) => call('/index/bankedit', payload),
   addressEdit: (payload) => call('/index/addressedit', payload),
   addressSetDefault: (id) => call('/index/addresschangedefault', { id }),
+  // notifications / OTA / analytics
+  notifications: () => call('/index/notifications'),
+  notifyRead: (id) => call('/index/notifyread', id ? { id } : {}),
+  checkUpdate: () => call('/index/checkupdate'),
+  track: (name, props) => call('/index/track', { name, props }).catch(() => {}),
 };

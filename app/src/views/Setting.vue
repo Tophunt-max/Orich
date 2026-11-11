@@ -31,6 +31,13 @@ onMounted(async () => {
 
 function clearCache() { cache.value = '0 B'; toast('Cache cleared'); }
 
+async function checkUpdate() {
+  try {
+    const u = await api.checkUpdate();
+    toast(u.hasUpdate ? ('Update available: v' + u.latest) : ('You are on the latest version (v' + u.version + ')'));
+  } catch (e) { toast(e.message); }
+}
+
 async function signOut() {
   try { await api.logout(); } catch { /* ignore */ }
   auth.setToken('');
@@ -77,9 +84,9 @@ async function signOut() {
         <span class="name_info" style="float:right;margin-right:30px">{{ langLabel }}</span>
       </div>
 
-      <div class="check">
-        <span class="check_updates">Version</span>
-        <span class="name_info" style="float:right;margin-right:30px">{{ version }}</span>
+      <div class="check" @click="checkUpdate">
+        <span class="check_updates">Version Update</span>
+        <span class="name_info" style="float:right;margin-right:30px">{{ version }} ›</span>
       </div>
 
       <div class="about" @click="router.push('/aboutus')">
