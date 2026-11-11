@@ -17,13 +17,13 @@ const statuses = [
   { icon: img + 'icon_Received.png', label: 'account.received', to: '/orders' },
 ];
 const menu = [
-  { icon: img + 'icon_myteam.png', label: 'account.team', to: '/invitation' },
-  { icon: img + 'icon_Fundingrecords.png', label: 'account.funding', to: '/orders' },
+  { icon: img + 'icon_myteam.png', label: 'account.team', to: '/team' },
+  { icon: img + 'icon_Fundingrecords.png', label: 'account.funding', to: '/funding' },
   { icon: img + 'icon_Invitationrecords.png', label: 'account.invite', to: '/invitation' },
-  { icon: img + 'icon_Myshare.png', label: 'task.title', to: '/tasks' },
+  { icon: img + 'icon_Myshare.png', label: 'winner.mine', to: '/myshare' },
   { icon: img + 'icon_Earnrewards.png', label: 'vip.title', to: '/vip' },
-  { icon: img + 'icon_AboutUs.png', label: 'account.about', to: '/help' },
-  { icon: img + 'icon_Customerservice.png', label: 'account.service', to: '/help' },
+  { icon: img + 'icon_AboutUs.png', label: 'account.about', to: '/aboutus' },
+  { icon: img + 'icon_Customerservice.png', label: 'account.service', to: '/service' },
 ];
 
 onMounted(async () => { user.value = await auth.refresh(); });
@@ -42,7 +42,7 @@ function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
           <div class="mine_user_info_number">{{ user?.phone ? 'ID: ' + user.phone : '—' }}</div>
         </div>
       </div>
-      <img class="mine_setting" :src="img + 'icon_setup.png'" alt="" @click="router.push('/help')" />
+      <img class="mine_setting" :src="img + 'icon_setup.png'" alt="" @click="router.push('/setting')" />
     </div>
 
     <div class="mine_main">
@@ -65,6 +65,7 @@ function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
       <div class="mine_wallet_main">
         <div class="mine_wallet_main_count">₹{{ user?.balance ?? '0.00' }}</div>
         <div class="mine_wallet_main_btnrecharge" @click="router.push('/recharge')">{{ t('common.recharge') }}</div>
+        <div class="mine_wallet_main_btndraw" @click="router.push('/withdraw')">{{ t('account.withdraw') }}</div>
       </div>
       <div class="mine_wallet_tip">{{ t('account.frozen') }}: ₹{{ user?.frozen ?? '0.00' }}</div>
     </div>
@@ -113,6 +114,7 @@ function logoutGo() { auth.signOut().then(() => router.replace('/home')); }
 .mine_wallet_main { line-height: 18px; margin-top: 17px; margin-left: 24px; display: flex; align-items: center; }
 .mine_wallet_main_count { width: 150px; font-size: 26px; font-weight: 700; color: #ee5016; }
 .mine_wallet_main_btnrecharge { padding: 0 14px; height: 35px; display: flex; align-items: center; justify-content: center; background: linear-gradient(115deg, #ffe44b, #fea326); border-radius: 4px; box-shadow: 0 -2px 4px 0 rgba(255,125,0,.5) inset; font-size: 13px; color: #ad6701; font-weight: 600; }
+.mine_wallet_main_btndraw { padding: 0 14px; height: 35px; margin-left: 8px; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ee5016; border-radius: 4px; font-size: 13px; color: #ee5016; font-weight: 600; }
 .mine_wallet_tip { margin-top: 6px; margin-left: 24px; font-weight: 400; color: #a6a5a5; line-height: 18px; font-size: 13px; }
 
 .mine_menulist { background: #fff; margin: 12px 8px; border-radius: 8px; padding: 12px 12px 14px 14px; }

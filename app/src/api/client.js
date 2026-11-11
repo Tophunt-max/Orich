@@ -58,4 +58,18 @@ export const api = {
   vipBuy: (id) => call('/index/vipBuy', { id }),
   luckyList: () => call('/index/luckyList'),
   luckyBuy: (id) => call('/index/luckyBuy', { id }),
+  // withdraw / records / banks / addresses / prizes / games / profile
+  withdraw: (amount) => call('/index/userwithdraw', { amount }),
+  cashList: () => call('/index/cashlist'),
+  rechargeRecord: () => call('/index/rechargerecord'),
+  bankList: () => call('/index/banklist'),
+  bankAdd: (bank) => call('/index/bankadd', bank),
+  bankDel: (id) => call('/index/bankdel', { id }),
+  addressList: () => call('/index/addresslist'),
+  addressAdd: (a) => call('/index/addressadd', a),
+  addressDel: (id) => call('/index/addressdel', { id }),
+  prizes: () => call('/index/price'),
+  games: () => call('/index/getactivity'),
+  accountEdit: (nickname) => call('/index/accountedit', { nickname }),
+  orderDetail: (id) => call('/index/orderdetail', { id }),
 };

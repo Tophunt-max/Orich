@@ -67,3 +67,27 @@ button { font-family: inherit; cursor: pointer; border: none; }
 }
 .empty { text-align: center; color: var(--muted); padding: 48px 0; }
 .empty img { width: 96px; margin: 0 auto 10px; opacity: 0.8; }
+
+/* ---- shared helpers for the secondary pages (real-app look) ---- */
+.scr { min-height: 100vh; background: #f6f6f6; }
+.rec-list { padding: 8px 0; }
+.rec-item { background: #fff; margin-bottom: 8px; padding: 14px 16px; }
+.rec-row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
+.rec-row + .rec-row { margin-top: 8px; }
+.rec-k { color: #b9b9b9; }
+.rec-v { color: #17273a; }
+.rec-amt { color: #ff5c5c; font-weight: 700; font-size: 16px; }
+.s-pending { color: #ee5016; } .s-success { color: #55e273; } .s-active { color: #649dff; }
+
+.form-page { background: #fff; min-height: 100vh; }
+.form-field { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
+.form-field label { display: block; font-size: 13px; color: #b9b9b9; margin-bottom: 6px; }
+.form-field input { width: 100%; border: none; outline: none; font-size: 16px; color: #17273a; background: transparent; }
+.big-btn { display: block; width: calc(100% - 30px); margin: 24px 15px; height: 48px; border-radius: 24px; background: #ee5016; color: #fff; font-size: 16px; font-weight: 700; }
+.big-btn:disabled { opacity: 0.55; }
+
+.list-card { background: #fff; margin: 10px 12px; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 6px rgba(23,39,58,.05); }
+.info-page { background: #fff; min-height: 100vh; padding: 16px; font-size: 14px; line-height: 1.8; color: #444; }
+.info-page h3 { color: #17273a; }
+.empty2 { text-align: center; color: #b9b9b9; padding: 60px 0; }
+.empty2 img { width: 90px; margin: 0 auto 10px; opacity: .8; }

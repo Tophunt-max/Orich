@@ -93,6 +93,19 @@ const luckyDraws = [
   { id: 2, title: 'Lucky ₹5 Cash Blast', ticket: 5, pool: 200, sold: 96, prize: '₹1,000 Cash', cover: img('home/img_Winning.png') },
 ];
 
+// Prizes / prize pool (pages/prize/prize).
+const prizes = [
+  { id: 1, name: '₹100 Cashback', cost: 500, cover: img('home/icon_Recharge.png') },
+  { id: 2, name: 'Free Lucky Ticket', cost: 200, cover: img('home/img_lottery.png') },
+  { id: 3, name: 'VIP Silver 7 days', cost: 1500, cover: img('home/icon_HotPicks.png') },
+];
+
+// Mini games (pages/game/game).
+const games = [
+  { id: 1, name: 'Spin & Win', cover: img('home/icon_pk.png'), ticket: 10 },
+  { id: 2, name: 'Lucky Dice', cover: img('home/icon_JoinPK.png'), ticket: 5 },
+];
+
 // A single demo account keyed by token.
 function freshUser() {
   return {
@@ -103,8 +116,10 @@ function freshUser() {
     frozen: 0,
     inviteCode: 'ORICH' + Math.floor(1000 + Math.random() * 8999),
     teamCount: 0,
+    banks: [],
+    addresses: [],
     createdAt: Date.now(),
   };
 }
 
-module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, luckyDraws, freshUser, img };
+module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, luckyDraws, prizes, games, freshUser, img };
