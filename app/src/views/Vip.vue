@@ -12,23 +12,15 @@ const tiers = ref([]);
 const picked = ref(null);
 const busy = ref(0);
 
-// Static derived content for the benefits grid + privileges list (no backend field for these).
-const benefits = [
-  { label: 'Daily bonus', icon: '/static/image/member/icon_goldcoins.png' },
-  { label: 'Cashback', icon: '/static/image/member/icon_Cash.png' },
-  { label: 'Red packets', icon: '/static/image/member/icon_redenvelope.png' },
-  { label: 'Higher win rate', icon: '/static/image/member/icon_winning.png' },
-  { label: 'Fast withdraw', icon: '/static/image/member/icon_Withdrawal.png' },
-];
-const privileges = [
-  'A fixed bonus credited to your balance every single day.',
-  'Increased referral rebate on all your team earnings.',
-  'Exclusive member-only lucky draws and prize pools.',
-  'Priority customer support whenever you need help.',
-];
+// Benefits grid + privileges list now come from the backend (api.vipTiers()).
+const benefits = ref([]);
+const privileges = ref([]);
 
 onMounted(async () => {
-  tiers.value = (await api.vipTiers()).list;
+  const data = await api.vipTiers();
+  tiers.value = data.list || [];
+  benefits.value = data.benefits || [];
+  privileges.value = data.privileges || [];
   picked.value = tiers.value[1]?.id ?? tiers.value[0]?.id;
   await auth.refresh();
 });

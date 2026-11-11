@@ -6,6 +6,11 @@ function img(p) {
   return '/static/image/' + p;
 }
 
+const HOUR = 3600e3;
+const now = Date.now();
+// Home category tabs (home ltab).
+const categories = ['All', 'Electronics', 'Vehicle', 'Gold', 'Home'];
+
 const products = [
   {
     id: 1,
@@ -18,6 +23,8 @@ const products = [
     joined: 12840,
     status: 'ongoing',    // ongoing | drawing | done
     hot: true,
+    category: 'Electronics',
+    endAt: now + 6 * HOUR + 42 * 60e3, // lucky-draw close time (ms)
   },
   {
     id: 2,
@@ -30,6 +37,8 @@ const products = [
     joined: 9650,
     status: 'drawing',
     hot: true,
+    category: 'Vehicle',
+    endAt: now - 2 * HOUR,
   },
   {
     id: 3,
@@ -42,6 +51,8 @@ const products = [
     joined: 430,
     status: 'ongoing',
     hot: false,
+    category: 'Gold',
+    endAt: now + 26 * HOUR,
   },
   {
     id: 4,
@@ -54,14 +65,16 @@ const products = [
     joined: 2210,
     status: 'ongoing',
     hot: true,
+    category: 'Home',
+    endAt: now + 3 * HOUR,
   },
 ];
 
 const winners = [
-  { id: 101, name: 'rahul***', product: 'iPhone 14 128GB', avatar: '/static/products/avatar.svg', code: 'OR20260108', shares: 36, date: '2026-11-08' },
-  { id: 102, name: 'meena***', product: 'Gold Coin 2g', avatar: '/static/products/avatar.svg', code: 'OR20260107', shares: 12, date: '2026-11-07' },
-  { id: 103, name: 'arjun***', product: 'OnePlus 12R', avatar: '/static/products/avatar.svg', code: 'OR20260106', shares: 58, date: '2026-11-06' },
-  { id: 104, name: 'sana***', product: 'Smart Watch', avatar: '/static/products/avatar.svg', code: 'OR20260105', shares: 9, date: '2026-11-05' },
+  { id: 101, name: 'rahul***', product: 'iPhone 14 128GB', avatar: img('networkimg/abdul.png'), code: 'OR20260108', shares: 36, date: '2026-11-08', images: [img('goods/prompt.png'), img('goods/prompt-2.png')] },
+  { id: 102, name: 'meena***', product: 'Gold Coin 2g', avatar: img('networkimg/babu.png'), code: 'OR20260107', shares: 12, date: '2026-11-07', images: [img('goods/prompt-3.png')] },
+  { id: 103, name: 'arjun***', product: 'OnePlus 12R', avatar: img('networkimg/praveen.png'), code: 'OR20260106', shares: 58, date: '2026-11-06', images: [] },
+  { id: 104, name: 'sana***', product: 'Smart Watch', avatar: img('networkimg/sultan.png'), code: 'OR20260105', shares: 9, date: '2026-11-05', images: [] },
 ];
 
 const finances = [
@@ -72,12 +85,12 @@ const finances = [
 
 const rechargeOptions = [100, 300, 500, 1000, 2000, 5000];
 
-// Daily tasks (2.1.4 task/taskList + taskReceive).
+// Daily tasks (2.1.4 task/taskList + taskReceive). `target` drives the progress ring.
 const tasks = [
-  { id: 1, title: 'Daily check-in', reward: 5, type: 'checkin', icon: img('home/icon_Promotion.png') },
-  { id: 2, title: 'Join any group-buy', reward: 10, type: 'join', icon: img('home/icon_1GroupBuy.png') },
-  { id: 3, title: 'Invite a friend', reward: 50, type: 'invite', icon: img('home/icon_Invite.png') },
-  { id: 4, title: 'Recharge ₹500+', reward: 20, type: 'recharge', icon: img('home/icon_Recharge.png') },
+  { id: 1, title: 'Daily check-in', reward: 5, type: 'checkin', target: 1, group: 'daily', icon: img('home/icon_Promotion.png') },
+  { id: 2, title: 'Join any group-buy', reward: 10, type: 'join', target: 1, group: 'mission', icon: img('home/icon_1GroupBuy.png') },
+  { id: 3, title: 'Invite a friend', reward: 50, type: 'invite', target: 3, group: 'mission', icon: img('home/icon_Invite.png') },
+  { id: 4, title: 'Recharge ₹500+', reward: 20, type: 'recharge', target: 1, group: 'mission', icon: img('home/icon_Recharge.png') },
 ];
 
 // VIP membership tiers (2.1.4 vip / vipBuy).
@@ -86,6 +99,44 @@ const vipTiers = [
   { id: 2, name: 'Gold', price: 799, days: 30, dailyBonus: 18, rebate: 4, color: '#e0a73a' },
   { id: 3, name: 'Platinum', price: 1999, days: 30, dailyBonus: 55, rebate: 7, color: '#6c5ce7' },
 ];
+// VIP benefits grid + privilege list shown on pages/task/member.
+const vipConfig = {
+  benefits: [
+    { icon: img('member/icon_redenvelope.png'), label: 'Daily bonus' },
+    { icon: img('member/icon_Cash.png'), label: 'Higher rebate' },
+    { icon: img('member/icon_goldcoins.png'), label: 'Bonus coins' },
+    { icon: img('member/icon_Withdrawal.png'), label: 'Fast withdraw' },
+    { icon: img('member/icon_winning.png'), label: 'Extra draws' },
+    { icon: img('member/icon_benefits.png'), label: 'VIP support' },
+  ],
+  privileges: [
+    'Earn a fixed bonus credited to your wallet every day.',
+    'Higher referral rebate on every invited friend who joins.',
+    'Priority customer support and faster withdrawals.',
+    'Exclusive VIP-only lucky draws and promotions.',
+  ],
+};
+// FAQ / help (pages/help/help) with category + icon.
+const helpItems = [
+  { id: 1, category: 'Group buy', q: 'How does a group-buy work?', a: 'Buy one or more shares of a product. When all shares sell, a winner is drawn and receives the product. Everyone who did not win gets a full refund.', icon: img('home/icon_1GroupBuy.png') },
+  { id: 2, category: 'Wallet', q: 'How do I recharge?', a: 'Open Account → Wallet → Recharge, pick an amount and a payment channel, then complete the payment.', icon: img('home/icon_Recharge.png') },
+  { id: 3, category: 'VIP', q: 'What is VIP membership?', a: 'A paid membership that pays a daily bonus and a higher referral rebate, plus faster withdrawals and exclusive draws.', icon: img('home/icon_Winner.png') },
+  { id: 4, category: 'Invite', q: 'How do referrals pay out?', a: 'Share your invite code. You earn commission whenever an invited friend joins a group-buy or recharges.', icon: img('home/icon_Invite.png') },
+  { id: 5, category: 'Withdraw', q: 'How long do withdrawals take?', a: 'Withdrawals are processed to your bank account within 1 working day (T+1) after approval.', icon: img('home/icon_Support.png') },
+];
+// Invitation rules text (pages/invitation/invitation).
+const inviteRules = [
+  'Share your unique invite link or code with friends.',
+  'Your friend registers using your code and becomes your direct referral.',
+  'You earn a commission every time they join a group-buy or recharge.',
+  'Friends invited by your referrals become indirect referrals and also earn you a bonus.',
+];
+// Recharge channels + withdraw config (payment pages).
+const payChannels = [
+  { key: 'upi', name: 'UPI', icon: img('pay/paytm.png') },
+  { key: 'xpay', name: 'XPay', icon: img('pay/xpay.png') },
+];
+const withdrawConfig = { feePercent: 2, min: 100, arrival: 'T+1 working day' };
 
 // Lucky instant-draw rounds (2.1.4 luckyList / luckyNow / luckyBuy).
 const luckyDraws = [
@@ -122,4 +173,4 @@ function freshUser() {
   };
 }
 
-module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, luckyDraws, prizes, games, freshUser, img };
+module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, vipConfig, luckyDraws, prizes, games, categories, helpItems, inviteRules, payChannels, withdrawConfig, freshUser, img };

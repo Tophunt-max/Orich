@@ -16,15 +16,18 @@ const amount = ref(0);
 const custom = ref('');
 const busy = ref(false);
 
-// Payment channels are presentation-only (the real app renders a fixed channel
-// list); the recharge API only accepts an amount, so the selection is not sent.
-const channels = [
-  { id: 'paytm', name: 'Paytm', icon: '/static/image/pay/paytm.png' },
-  { id: 'xpay', name: 'UPI / XPay', icon: '/static/image/pay/xpay.png' },
-];
-const channel = ref('paytm');
+// Payment channels now come from the backend (api.rechargeOptions().channels);
+// the recharge API only accepts an amount, so the selection itself is not sent.
+const channels = ref([]);
+const channel = ref('');
 
-onMounted(async () => { options.value = (await api.rechargeOptions()).options; await auth.refresh(); });
+onMounted(async () => {
+  const data = await api.rechargeOptions();
+  options.value = data.options || [];
+  channels.value = data.channels || [];
+  channel.value = channels.value[0]?.key ?? '';
+  await auth.refresh();
+});
 function pick(v) { amount.value = v; custom.value = ''; }
 
 async function pay() {
@@ -61,10 +64,10 @@ async function pay() {
       <div class="comfirm-title"><span class="comfirm-op"></span>Payment method</div>
       <div class="pay">
         <div class="pay-list">
-          <div v-for="c in channels" :key="c.id" class="pay-item" @click="channel = c.id">
+          <div v-for="c in channels" :key="c.key" class="pay-item" @click="channel = c.key">
             <img class="pay-icon" :src="c.icon" :alt="c.name" />
             <div class="pay-name">{{ c.name }}</div>
-            <div class="pay-radio" :class="{ 'pay-select': channel === c.id }"><div class="pay-op"></div></div>
+            <div class="pay-radio" :class="{ 'pay-select': channel === c.key }"><div class="pay-op"></div></div>
           </div>
         </div>
       </div>

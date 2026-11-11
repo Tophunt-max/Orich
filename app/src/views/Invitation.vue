@@ -10,25 +10,23 @@ const { t } = useI18n();
 const { toast } = useToast();
 const code = ref('');
 const team = ref(null);
+const rules = ref([]);
+const invitees = ref([]);
 const tab = ref('records'); // records | rules
 
 onMounted(async () => {
-  code.value = (await api.invite()).inviteCode;
+  const inv = await api.invite();
+  code.value = inv.inviteCode;
+  rules.value = inv.rules || [];
+  invitees.value = inv.list || [];
   try { team.value = await api.team(); } catch { /* ignore */ }
 });
 
 const invited = computed(() => team.value?.count ?? 0);
 const earned = computed(() =>
   team.value?.levels?.reduce((a, l) => a + Number(l.commission), 0).toFixed(2) ?? '0.00');
-// Records feed: backend returns an empty list, so fall back to per-level rows when present.
-const records = computed(() => team.value?.list?.length ? team.value.list : []);
-
-const rules = [
-  'Share your invite link or code with friends.',
-  'They register a new ORich account using your code.',
-  'When they join a group-buy or recharge, you earn commission.',
-  'Commission is credited to your wallet automatically.',
-];
+// Records feed: the real list of invitees returned by api.invite().
+const records = computed(() => invitees.value);
 
 async function copy() {
   try { await navigator.clipboard.writeText(code.value); toast(t('invite.copy') + ' ✓'); }
@@ -100,16 +98,16 @@ async function copy() {
 
       <template v-if="tab === 'records'">
         <template v-if="records.length">
-          <div v-for="(r, i) in records" :key="i" class="tabs">
+          <div v-for="(r, i) in records" :key="r.id ?? i" class="tabs">
             <div class="tabs_rank">
               <div class="tabs_rank_num">{{ i + 1 }}</div>
               <div class="tabs_left">
                 <div class="tabs_user"><span>{{ r.name || r.phone || 'Member' }}</span></div>
-                <div class="tabs_time">{{ r.date || r.time || '' }}</div>
+                <div class="tabs_time">{{ r.date || '' }}</div>
               </div>
             </div>
             <div class="tabs_right">
-              <span class="tabs_num">+₹{{ r.commission ?? r.reward ?? '0.00' }}</span>
+              <span v-if="r.vip" class="tabs_num">{{ r.vip }}</span>
             </div>
           </div>
         </template>
