@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
+import { api } from '../api/client';
 import { useToast } from '../components/useToast';
 
 const router = useRouter();
@@ -71,10 +72,14 @@ function pick(e) {
 }
 function remove(i) { images.value.splice(i, 1); }
 
-function submit() {
+async function submit() {
   if (!content.value.trim()) return toast(t('promptShare'));
   busy.value = true;
   const n = images.value.length;
+  try {
+    // Upload each selected photo to the backend (real /index/upload), like the app.
+    await Promise.all(images.value.map((img) => (img.startsWith('data:') ? api.upload(img) : Promise.resolve())));
+  } catch { /* ignore upload errors in demo */ }
   toast(n ? t('submittedWithPhotos', { n }) : t('submitted'));
   setTimeout(() => { busy.value = false; router.back(); }, 700);
 }
