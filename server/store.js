@@ -19,6 +19,7 @@ function freshState() {
     luckyDraws: seed.luckyDraws.map((l) => ({ ...l })),
     prizes: seed.prizes.map((p) => ({ ...p })),
     games: seed.games.map((g) => ({ ...g })),
+    helpItems: seed.helpItems.map((h) => ({ ...h })),
     rechargeOptions: [...seed.rechargeOptions],
     settings: {
       name: 'ORich',
@@ -26,6 +27,9 @@ function freshState() {
       service: 'https://wa.me/910000000000',
       tabBarColor: '#17273a',
       tabBarActive: '#de6436',
+      withdrawFee: seed.withdrawConfig.feePercent,
+      withdrawMin: seed.withdrawConfig.min,
+      withdrawArrival: seed.withdrawConfig.arrival,
     },
     users: [],   // { id, phone, nickname, avatar, balance, frozen, inviteCode, teamCount, invitedBy, createdAt }
     orders: [],  // { id, userId, type, product, shares, amount, status, date }
