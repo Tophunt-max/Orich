@@ -3,12 +3,13 @@ main = "src/index.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
-# Built static assets (user app at /, admin at /admin) served by the same Worker.
-# Run `npm run build` first to populate ./public.
-[assets]
-directory = "./public"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
+# API-only by default (app + admin are deployed to Cloudflare Pages).
+# To instead serve everything from this one Worker, run `npm run build` to
+# populate ./public and UNCOMMENT the [assets] block below.
+# [assets]
+# directory = "./public"
+# binding = "ASSETS"
+# not_found_handling = "single-page-application"
 
 # Persistent state lives in one KV document. Create the namespace and paste its id:
 #   npx wrangler kv namespace create ORICH_KV

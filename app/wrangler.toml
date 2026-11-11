@@ -1,0 +1,7 @@
+# Cloudflare Pages config for the user app.
+# Deploy:  cd app && npm run build && npx wrangler pages deploy dist
+# (or connect the repo in the Pages dashboard — root dir `app`, build `npm run build`,
+#  output `dist`, and set the build env var VITE_API_BASE to your Worker API URL.)
+name = "orich-app"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"

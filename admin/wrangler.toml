@@ -1,0 +1,7 @@
+# Cloudflare Pages config for the admin panel.
+# Deploy:  cd admin && npm run build && npx wrangler pages deploy dist
+# (or connect the repo in the Pages dashboard — root dir `admin`, build `npm run build`,
+#  output `dist`, and set the build env var VITE_ADMIN_API to your Worker admin API URL.)
+name = "orich-admin"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"

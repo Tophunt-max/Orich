@@ -1,43 +1,43 @@
-# ORich on Cloudflare (all-in-one Worker)
+# ORich API on Cloudflare (Worker + KV)
 
-This Worker runs the **whole app on Cloudflare**: the JSON API (reusing the exact
-same logic as `server/core.js`), plus the built user app (`/`) and admin (`/admin`)
-as static assets — with state persisted in a single **KV** document.
+This Worker runs the ORich **JSON API** on Cloudflare (reusing the exact same logic
+as `server/core.js`), with state persisted in a single **KV** document. By default
+it is **API-only** — the user app and admin are deployed separately to **Cloudflare
+Pages** (see `../DEPLOY.md`). It can optionally also serve the app + admin itself.
 
 ```
 worker/
   src/index.js     # fetch handler → core.handleUser / core.handleAdmin, KV persistence
-  wrangler.toml    # assets + KV bindings
-  build.mjs        # builds app + admin into ./public
+  wrangler.toml    # KV binding (+ optional static-assets binding)
+  build.mjs        # (all-in-one only) builds app + admin into ./public
 ```
 
-## One-time setup
+## Deploy (API-only — pairs with Pages front-ends)
 
 ```bash
 cd worker
 npm install
 npx wrangler login
-
-# Create the KV namespace and copy the printed id into wrangler.toml (ORICH_KV id)
-npx wrangler kv namespace create ORICH_KV
+npx wrangler kv namespace create ORICH_KV   # paste the id into wrangler.toml
+npm run deploy                              # just `wrangler deploy`
 ```
 
-Edit `wrangler.toml` → set `kv_namespaces.id` to the id you just got.
+Gives e.g. `https://orich.<you>.workers.dev` serving:
+- `/api/*`        → user API
+- `/admin/api/*`  → admin API
 
-## Build + deploy
+Point the Pages builds at it: `VITE_API_BASE=https://orich.<you>.workers.dev/api`
+and `VITE_ADMIN_API=https://orich.<you>.workers.dev/admin/api`. CORS is already open.
 
+Harden: `npx wrangler secret put ORICH_HIDE_OTP` (=`1`), `ADMIN_USER`, `ADMIN_PASS`.
+
+## Optional: one Worker serves everything (no Pages, one origin)
+
+Uncomment the `[assets]` block in `wrangler.toml`, then:
 ```bash
-npm run deploy      # builds app+admin into ./public, then `wrangler deploy`
+npm run deploy:allinone     # builds app+admin into ./public, then deploys
 ```
-
-That's it — one Worker serves:
-- `https://orich.<you>.workers.dev/`        → user app
-- `https://orich.<you>.workers.dev/admin`   → admin panel
-- `https://orich.<you>.workers.dev/api/*`   → user API
-- `https://orich.<you>.workers.dev/admin/api/*` → admin API
-
-Same-origin, so the app's default `VITE_API_BASE=/api` and admin's
-`VITE_ADMIN_API=/admin/api` just work (the build sets them).
+Now `/` → app, `/admin` → admin, `/api/*` + `/admin/api/*` → API (same-origin, no CORS).
 
 ## Production hardening
 ```bash
