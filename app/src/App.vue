@@ -14,9 +14,11 @@ onMounted(() => auth.refresh());
 </script>
 
 <template>
-  <router-view v-slot="{ Component }">
-    <component :is="Component" />
-  </router-view>
+  <div class="app-body" :class="{ 'has-tab': showTab }">
+    <router-view v-slot="{ Component }">
+      <component :is="Component" />
+    </router-view>
+  </div>
   <TabBar v-if="showTab" />
   <transition name="fade">
     <div v-if="message" class="toast">{{ message }}</div>
@@ -26,4 +28,6 @@ onMounted(() => auth.refresh());
 <style>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+/* Reserve space for the fixed 56px bottom tab bar on tab pages so content is never hidden. */
+.app-body.has-tab { padding-bottom: 56px; }
 </style>

@@ -28,8 +28,11 @@ button { font-family: inherit; cursor: pointer; border: none; }
   min-height: 100vh;
   background: var(--bg);
   position: relative;
+  overflow-x: hidden;            /* no accidental horizontal scroll on mobile */
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.08);
 }
+/* Any page/section must never force the frame wider than the screen. */
+#app img, #app .banner-img { max-width: 100%; }
 
 .page { padding-bottom: 64px; min-height: 100vh; }
 
