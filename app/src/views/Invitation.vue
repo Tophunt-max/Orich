@@ -12,7 +12,8 @@ const code = ref('');
 const team = ref(null);
 const rules = ref([]);
 const invitees = ref([]);
-const tab = ref('records'); // records | rules
+const topList = ref([]);
+const tab = ref('records'); // records | rules | top
 
 onMounted(async () => {
   const inv = await api.invite();
@@ -20,7 +21,17 @@ onMounted(async () => {
   rules.value = inv.rules || [];
   invitees.value = inv.list || [];
   try { team.value = await api.team(); } catch { /* ignore */ }
+  try { const r = await api.inviteTop(); topList.value = r?.list || []; } catch { /* ignore */ }
 });
+
+// Leaderboard feed: top referrers returned by api.inviteTop().
+const top = computed(() => topList.value);
+function maskName(name) {
+  const s = String(name || '').trim();
+  if (!s) return 'Member';
+  if (s.length <= 2) return s[0] + '*';
+  return s.slice(0, 1) + '***' + s.slice(-1);
+}
 
 const invited = computed(() => team.value?.count ?? 0);
 const earned = computed(() =>
@@ -90,9 +101,13 @@ async function copy() {
           <span :class="tab === 'rules' ? 'tab_rec' : 'tab_rul'">Rules</span>
           <i v-if="tab === 'rules'"></i>
         </div>
-        <div class="item_right" @click="tab = 'records'">
+        <div class="item_left" @click="tab = 'records'">
           <span :class="tab === 'records' ? 'tab_rec' : 'tab_rul'">Records</span>
           <i v-if="tab === 'records'"></i>
+        </div>
+        <div class="item_right" @click="tab = 'top'">
+          <span :class="tab === 'top' ? 'tab_rec' : 'tab_rul'">Top</span>
+          <i v-if="tab === 'top'"></i>
         </div>
       </div>
 
@@ -112,6 +127,24 @@ async function copy() {
           </div>
         </template>
         <div v-else class="empty">No referral records yet. Invite friends to get started!</div>
+      </template>
+
+      <template v-else-if="tab === 'top'">
+        <template v-if="top.length">
+          <div v-for="(r, i) in top" :key="r.rank ?? i" class="tabs">
+            <div class="tabs_rank">
+              <div class="tabs_rank_num" :class="{ top3: (r.rank ?? i + 1) <= 3 }">{{ r.rank ?? i + 1 }}</div>
+              <div class="tabs_left">
+                <div class="tabs_user"><span>{{ maskName(r.name) }}</span></div>
+                <div class="tabs_time">{{ r.invites ?? 0 }} invites</div>
+              </div>
+            </div>
+            <div class="tabs_right">
+              <span class="tabs_num">₹{{ r.reward ?? '0.00' }}</span>
+            </div>
+          </div>
+        </template>
+        <div v-else class="empty">No leaderboard data yet.</div>
       </template>
 
       <div v-else class="rule-box">
@@ -172,6 +205,7 @@ async function copy() {
 .tabs { display: flex; justify-content: space-between; margin: 7px 13px 0; padding-bottom: 11px; border-bottom: .5px solid #ececec; }
 .tabs_rank { display: flex; align-items: center; justify-content: flex-start; }
 .tabs_rank_num { width: 21px; height: 21px; line-height: 21px; background: #ffe6e2; border-radius: 50%; text-align: center; font-size: 14px; font-weight: 500; color: #fc573b; margin-right: 12px; flex-shrink: 0; }
+.tabs_rank_num.top3 { background: #ee5016; color: #fff; }
 .tabs_left { display: flex; flex-direction: column; }
 .tabs_right { display: flex; align-items: center; }
 .tabs_user { font-size: 14px; color: #17273a; display: flex; align-items: center; }

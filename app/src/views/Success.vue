@@ -1,9 +1,39 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { api } from '../api/client';
+import { useToast } from '../components/useToast';
 
 const route = useRoute();
 const router = useRouter();
+const { toast } = useToast();
+
+const whatsappUrl = ref('');
+
+onMounted(async () => {
+  try { const r = await api.whatsappChannel(); whatsappUrl.value = r?.url || ''; } catch { /* ignore */ }
+});
+
+function openWhatsapp() {
+  if (whatsappUrl.value) window.open(whatsappUrl.value, '_blank');
+  else toast('WhatsApp link unavailable');
+}
+
+async function share() {
+  const id = Number(route.query.order || route.query.id || 0) || 0;
+  try {
+    const r = await api.orderShare(id);
+    const link = r?.link || '';
+    if (link) {
+      try { await navigator.clipboard.writeText(link); toast('Share link copied ✓'); }
+      catch { toast(link); }
+    } else {
+      toast('No share link available');
+    }
+  } catch {
+    toast('Could not generate share link');
+  }
+}
 
 // Data-light: read optional details from the route query.
 const title = computed(() => route.query.title || route.query.product || 'Your order');
@@ -77,10 +107,12 @@ const steps = [
         </div>
       </div>
 
-      <div class="whatsapp">
+      <div class="whatsapp" @click="openWhatsapp">
         <div class="whatsapp_img"><img src="/static/image/bask/img_whatsapp.png" alt="" /></div>
         <div class="whatsapp_text">Join WhatsApp</div>
       </div>
+
+      <div class="share-order" @click="share">Share this order ›</div>
     </div>
   </div>
 </template>
@@ -119,5 +151,7 @@ const steps = [
 .whatsapp { margin-top: 43px; display: flex; align-items: center; justify-content: center; width: 201px; height: 58px; background: #f0fff2; border-radius: 10px; box-shadow: 0px -3px 4px 0px rgba(48,171,65,.2) inset; margin-left: 50%; transform: translateX(-50%); }
 .whatsapp .whatsapp_img { width: 33px; height: 33px; }
 .whatsapp .whatsapp_img img { width: 100%; height: 100%; object-fit: contain; }
+.whatsapp { cursor: pointer; }
 .whatsapp .whatsapp_text { margin-left: 7px; font-size: 18px; font-family: PingFang SC, PingFang SC-Bold; font-weight: 700; color: #55cd63; letter-spacing: 0px; }
+.share-order { margin: 16px auto 0; text-align: center; font-size: 14px; font-family: Roboto, Roboto-Medium; font-weight: 500; color: #ee5016; cursor: pointer; }
 </style>
