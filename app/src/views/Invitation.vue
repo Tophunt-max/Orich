@@ -122,7 +122,8 @@ async function copy() {
 </template>
 
 <style scoped>
-.invitation { width: 100vw; min-height: 100vh; background-image: url('/static/image/invite/invite_bg.png'); background-size: 100%; background-repeat: no-repeat; background-color: #fe5541; padding-bottom: 20px; }
+/* Frame-relative width: 100vw (390px) overflows the 375 frame, dragging .hero and the flush-right .middle_rule pill past the right edge. */
+.invitation { width: 100%; min-height: 100vh; background-image: url('/static/image/invite/invite_bg.png'); background-size: 100%; background-repeat: no-repeat; background-color: #fe5541; padding-bottom: 20px; }
 .inav { height: 44px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; font-weight: 700; }
 .middle_rule { display: flex; align-items: center; justify-content: flex-end; margin-top: 10px; }
 .middle_rule_item { height: 31px; padding: 0 12px 0 17px; background: #ffeda8; border-radius: 100px 0 0 100px; box-shadow: 0 0 11px 0 rgba(250,104,75,.5); display: flex; align-items: center; color: #fe6232; }

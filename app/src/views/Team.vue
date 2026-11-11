@@ -126,7 +126,8 @@ function openLevel(level) {
 </template>
 
 <style scoped>
-.team { background-image: url('/static/image/account/bg_myteam.png'); background-size: 100%; background-repeat: no-repeat; width: 100vw; min-height: 100vh; padding-bottom: 10px; background-color: #f9f9f9; }
+/* Frame-relative width: 100vw is the full viewport (390px) and pushes the header/top past the 375 frame's right edge. */
+.team { background-image: url('/static/image/account/bg_myteam.png'); background-size: 100%; background-repeat: no-repeat; width: 100%; min-height: 100vh; padding-bottom: 10px; background-color: #f9f9f9; }
 .team .team_nav { position: relative; color: #fff; }
 .team .team_nav :deep(.navbar) { background: transparent; color: #fff; }
 .team .team_nav .team_nav_rule { position: absolute; top: 0; right: 29px; height: 44px; line-height: 44px; font-size: 14px; font-family: 'PingFang SC', 'PingFang SC-Bold'; font-weight: 700; color: #fff; z-index: 2; }

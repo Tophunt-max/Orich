@@ -127,7 +127,7 @@ async function buy(tier) {
 .level span { font-size: 18px; font-weight: 700; color: #9c4d08; }
 .member_open { margin: 0 17px; background: #2b2320; border-radius: 0 0 12px 12px; padding: 20px 0 16px; }
 .member_open_title { margin-left: 17px; color: #f6deae; font-size: 16px; font-weight: 700; }
-.member_open_card { margin-top: 16px; padding-left: 16px; display: flex; align-items: center; overflow-x: auto; gap: 10px; }
+.member_open_card { margin-top: 16px; padding-left: 16px; padding-right: 16px; display: flex; flex-wrap: nowrap; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 10px; }
 .member_open_card_item { flex-shrink: 0; width: 179px; border-radius: 10px; padding: 13px 3px 13px 16px; color: #a5a2a1; background: #3a322d; }
 .member_open_card_item.memactive { background: linear-gradient(135deg, #ffe9c2, #f6deae); color: #9c4d08; }
 .moc-name { font-size: 18px; font-weight: 500; }

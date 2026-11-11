@@ -6,9 +6,12 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
+// Real ORich 2.1.4 bottom bar: 5 tabs (Home, Winner, Task, VIP, Account).
 const tabs = [
   { path: '/home', key: 'home', nor: '/static/image/tab/icon_home_Nav_nor.png', sel: '/static/image/tab/icon_home_Nav_sel.png' },
   { path: '/winner', key: 'winner', nor: '/static/image/tab/icon_Winner_Nav_nor.png', sel: '/static/image/tab/icon_Winner_Nav_sel.png' },
+  { path: '/tasks', key: 'task', nor: '/static/image/tab/icon_task_nor.png', sel: '/static/image/tab/icon_task_sel.png' },
+  { path: '/vip', key: 'vip', nor: '/static/image/tab/icon_vip_Nav_nor.png', sel: '/static/image/tab/icon_vip_Nav_sel.png' },
   { path: '/account', key: 'account', nor: '/static/image/tab/icon_Account_Nav_nor.png', sel: '/static/image/tab/icon_Account_Nav_sel.png' },
 ];
 </script>

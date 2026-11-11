@@ -236,7 +236,8 @@ async function bet(color) {
 .game .game_tab .game_tab_item .game_tab_item_select { width: 14px; height: 6px; margin-top: 4px; background: #17273a; border-radius: 3px; }
 .game .game_tab .game_tab_item .tabselect { font-size: 16px; font-weight: 500; color: #17273a; }
 
-.mask { position: fixed; left: 0; top: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; background: rgba(0,0,0,.6); }
+/* Center the rule modal within the 375 frame (not the full viewport). */
+.mask { position: fixed; left: 50%; top: 0; transform: translateX(-50%); z-index: 99999; display: flex; align-items: center; justify-content: center; width: 100%; max-width: var(--maxw); height: 100vh; background: rgba(0,0,0,.6); }
 .game_rule_wrap { display: flex; flex-direction: column; align-items: center; }
 .game .game_rule { width: 344px; height: 488px; background: url('/static/image/game/bg_rules.png') no-repeat; background-size: 100% 100%; padding: 50px 15px 20px 20px; }
 .game .game_rule .game_rule_content { height: 100%; width: 100%; overflow: hidden; overflow-y: scroll; font-size: 13px; line-height: 20px; color: #8f5601; }

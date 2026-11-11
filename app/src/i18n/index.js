@@ -3,7 +3,7 @@ import { createI18n } from 'vue-i18n';
 // English + Hindi, like the original ORich app (which shipped en/hi/zh).
 const en = {
   app: { name: 'ORich' },
-  tab: { home: 'Home', winner: 'Winner', account: 'Account' },
+  tab: { home: 'Home', winner: 'Winner', task: 'Tasks', vip: 'VIP', account: 'Account' },
   common: { join: 'Join', recharge: 'Recharge', confirm: 'Confirm', cancel: 'Cancel', back: 'Back', all: 'All', loading: 'Loading…', empty: 'Nothing here yet', balance: 'Balance', submit: 'Submit' },
   home: { notice: 'Notice', hot: 'Hot Picks', groupBuy: '1₹ Group Buy', latestWinners: 'Latest Winners', viewAll: 'View all', joined: 'joined', remaining: 'left' },
   product: { marketValue: 'Market value', perShare: 'Per share', progress: 'Progress', shares: 'Shares', total: 'Total', joinNow: 'Join now', ongoing: 'Ongoing', drawing: 'Drawing', done: 'Completed' },
@@ -20,7 +20,7 @@ const en = {
 
 const hi = {
   app: { name: 'ORich' },
-  tab: { home: 'होम', winner: 'विजेता', account: 'खाता' },
+  tab: { home: 'होम', winner: 'विजेता', task: 'टास्क', vip: 'VIP', account: 'खाता' },
   common: { join: 'शामिल हों', recharge: 'रिचार्ज', confirm: 'पुष्टि करें', cancel: 'रद्द करें', back: 'वापस', all: 'सभी', loading: 'लोड हो रहा है…', empty: 'अभी यहाँ कुछ नहीं है', balance: 'बैलेंस', submit: 'सबमिट' },
   home: { notice: 'सूचना', hot: 'हॉट पिक्स', groupBuy: '₹1 ग्रुप बाय', latestWinners: 'नए विजेता', viewAll: 'सभी देखें', joined: 'शामिल', remaining: 'बाकी' },
   product: { marketValue: 'बाज़ार मूल्य', perShare: 'प्रति शेयर', progress: 'प्रगति', shares: 'शेयर', total: 'कुल', joinNow: 'अभी शामिल हों', ongoing: 'जारी', drawing: 'ड्रॉ', done: 'पूर्ण' },
