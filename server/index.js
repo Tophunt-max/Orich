@@ -59,8 +59,8 @@ const userRoutes = {
       entries: [
         { key: 'recharge', label: 'Recharge', icon: store.img('home/icon_Recharge.png') },
         { key: 'invite', label: 'Invite', icon: store.img('home/icon_Invite.png') },
-        { key: 'task', label: 'Tasks', icon: store.img('home/icon_Tips.png') },
-        { key: 'vip', label: 'VIP', icon: store.img('home/icon_HotPicks.png') },
+        { key: 'task', label: 'Tasks', icon: store.img('home/icon_Promotion.png') },
+        { key: 'vip', label: 'VIP', icon: store.img('home/icon_Winner.png') },
         { key: 'orders', label: 'My Orders', icon: store.img('home/icon_MyOrders.png') },
         { key: 'support', label: 'Support', icon: store.img('home/icon_Support.png') },
       ],
