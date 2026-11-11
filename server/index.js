@@ -149,7 +149,7 @@ const userRoutes = {
 
   '/index/logout': (b, ctx) => { delete sessions[ctx.user.token]; return ok({}, 'Logged out'); },
   '/index/useraccount': (b, ctx) => ok({ user: userView(ctx.user.user), finance: financeSummary(ctx.user.user.id) }),
-  '/index/userbalance': (b, ctx) => ok({ balance: rupees(ctx.user.user.balance), frozen: rupees(ctx.user.user.frozen), withdraw: seed.withdrawConfig }),
+  '/index/userbalance': (b, ctx) => { const st = store.get().settings; return ok({ balance: rupees(ctx.user.user.balance), frozen: rupees(ctx.user.user.frozen), withdraw: { feePercent: st.withdrawFee ?? seed.withdrawConfig.feePercent, min: st.withdrawMin ?? seed.withdrawConfig.min, arrival: st.withdrawArrival ?? seed.withdrawConfig.arrival } }); },
 
   '/index/addrechargepay2': (b, ctx) => {
     const amount = Math.round(Number(b.amount) * 100);
@@ -454,6 +454,9 @@ const adminRoutes = {
       orders: s.orders.length,
       recharge: sum('recharge').toFixed(2), joins: sum('join').toFixed(2),
       finance: sum('finance').toFixed(2), vip: sum('vip').toFixed(2),
+      withdraw: sum('withdraw').toFixed(2),
+      pendingWithdraw: s.orders.filter((o) => o.type === 'withdraw' && o.status === 'pending').length,
+      pendingRecharge: s.orders.filter((o) => o.type === 'recharge' && o.status === 'pending').length,
       settings: s.settings,
     });
   },
@@ -490,6 +493,35 @@ const adminRoutes = {
     u.balance = Math.max(0, u.balance + Math.round(Number(b.delta) * 100)); store.save();
     return ok({ user: userView(u) }, 'Balance updated');
   },
+  'POST /users/save': (b) => {
+    const u = store.get().users.find((x) => x.id === Number(b.id));
+    if (!u) return err('User not found');
+    if (b.nickname != null) u.nickname = String(b.nickname).slice(0, 24);
+    if (b.balance != null) u.balance = Math.max(0, Math.round(Number(b.balance) * 100));
+    if (b.frozen != null) u.frozen = Math.max(0, Math.round(Number(b.frozen) * 100));
+    if (b.vip !== undefined) u.vip = b.vip ? { name: b.vip, until: Date.now() + 30 * 864e5 } : null;
+    store.save();
+    return ok({ user: userView(u) }, 'User saved');
+  },
+  'POST /users/delete': (b) => { const s = store.get(); s.users = s.users.filter((x) => x.id !== Number(b.id)); store.save(); return ok({}, 'User deleted'); },
+  'GET /user': (b) => {
+    const s = store.get(); const u = s.users.find((x) => x.id === Number(b.id));
+    if (!u) return err('User not found');
+    return ok({ user: userView(u), orders: s.orders.filter((o) => o.userId === u.id).reverse(), banks: u.banks || [], addresses: u.addresses || [], team: teamOf(u) });
+  },
+  'POST /orders/status': (b) => {
+    const s = store.get(); const o = s.orders.find((x) => x.id === Number(b.id));
+    if (!o) return err('Order not found');
+    const prev = o.status; const next = b.status || o.status;
+    // Rejecting a pending withdrawal refunds the amount to the user's wallet.
+    if (o.type === 'withdraw' && next === 'rejected' && prev !== 'rejected') {
+      const u = s.users.find((x) => x.id === o.userId);
+      if (u) u.balance += Math.round(Number(o.amount) * 100);
+    }
+    o.status = next; store.save();
+    return ok({ order: o }, 'Order updated');
+  },
+  'POST /orders/delete': (b) => { const s = store.get(); s.orders = s.orders.filter((x) => x.id !== Number(b.id)); store.save(); return ok({}, 'Order deleted'); },
   'GET /orders': (b) => {
     let list = store.get().orders;
     if (b.type) list = list.filter((o) => o.type === b.type);

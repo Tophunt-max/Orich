@@ -34,7 +34,12 @@ export const api = {
   remove: (name, id) => req('POST', '/collection/delete', { name, id }),
   users: () => req('GET', '/users'),
   adjust: (id, delta) => req('POST', '/users/adjust', { id, delta }),
+  userSave: (payload) => req('POST', '/users/save', payload),
+  userDelete: (id) => req('POST', '/users/delete', { id }),
+  userDetail: (id) => req('GET', '/user?id=' + id),
   orders: (type) => req('GET', '/orders' + (type ? '?type=' + type : '')),
+  orderStatus: (id, status) => req('POST', '/orders/status', { id, status }),
+  orderDelete: (id) => req('POST', '/orders/delete', { id }),
   settings: (settings) => req('POST', '/settings', { settings }),
   drawWinner: (productId, name, shares) => req('POST', '/drawWinner', { productId, name, shares }),
 };

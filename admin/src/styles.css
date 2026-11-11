@@ -44,3 +44,15 @@ td img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
 .toast { position: fixed; top: 16px; right: 16px; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; z-index: 60; font-size: 14px; }
 .err { color: #e2493f; font-size: 13px; }
 .muted { color: var(--muted); }
+
+/* --- admin extras: status pills, alert stat, textarea --- */
+.pill { display: inline-block; padding: 2px 10px; border-radius: 11px; font-size: 12px; background: #eef0f3; color: #555; text-transform: capitalize; }
+.pill.st-pending { background: #fff3e0; color: #e07b00; }
+.pill.st-success, .pill.st-active, .pill.st-delivered, .pill.st-rewarded, .pill.st-entered { background: #e6f6ea; color: #1f9d4d; }
+.pill.st-rejected { background: #fdeaea; color: #d23b3b; }
+.pill.st-ongoing { background: #e8f0fe; color: #3a6ff0; }
+.stat.alert { outline: 2px solid #ee5016; }
+.stat.alert .n { color: #ee5016; }
+textarea { width: 100%; padding: 10px 12px; border: 1px solid #d9dde3; border-radius: 8px; font: inherit; resize: vertical; box-sizing: border-box; }
+.box table { font-size: 13px; }
+.box h4 { font-size: 14px; color: #17273a; }
