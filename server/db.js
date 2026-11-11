@@ -74,7 +74,7 @@ const rechargeOptions = [100, 300, 500, 1000, 2000, 5000];
 
 // Daily tasks (2.1.4 task/taskList + taskReceive).
 const tasks = [
-  { id: 1, title: 'Daily check-in', reward: 5, type: 'checkin', icon: img('home/icon_Tips.png') },
+  { id: 1, title: 'Daily check-in', reward: 5, type: 'checkin', icon: img('home/icon_Promotion.png') },
   { id: 2, title: 'Join any group-buy', reward: 10, type: 'join', icon: img('home/icon_1GroupBuy.png') },
   { id: 3, title: 'Invite a friend', reward: 50, type: 'invite', icon: img('home/icon_Invite.png') },
   { id: 4, title: 'Recharge ₹500+', reward: 20, type: 'recharge', icon: img('home/icon_Recharge.png') },
