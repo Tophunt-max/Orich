@@ -1,8 +1,31 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Recharge Records',
+      tab: 'Recharge records',
+      empty: 'No records',
+      amount: 'Amount',
+      status: 'Status',
+      date: 'Date',
+    },
+    hi: {
+      navTitle: 'रिचार्ज रिकॉर्ड',
+      tab: 'रिचार्ज रिकॉर्ड',
+      empty: 'कोई रिकॉर्ड नहीं',
+      amount: 'राशि',
+      status: 'स्थिति',
+      date: 'तारीख',
+    },
+  },
+});
 
 const { toast } = useToast();
 const list = ref([]);
@@ -16,28 +39,28 @@ onMounted(async () => {
 <!-- Faithful rebuild of the real pages/payment/payrecord (.payrecord) + scoped CSS. -->
 <template>
   <div>
-    <NavBar title="Recharge Records" />
+    <NavBar :title="t('navTitle')" />
     <div class="payrecord">
       <div class="payrecord_tab">
-        <div class="payrecord_tab_item active">Recharge records</div>
+        <div class="payrecord_tab_item active">{{ t('tab') }}</div>
       </div>
 
       <div v-if="!list.length" class="empty2">
         <img src="/static/image/nodata.png" alt="" />
-        <div>No records</div>
+        <div>{{ t('empty') }}</div>
       </div>
 
       <div v-for="o in list" :key="o.id" class="payrecord_list">
         <div class="payrecord_list_item border">
-          <span>Amount</span>
+          <span>{{ t('amount') }}</span>
           <span class="payrecord_list_item_content">+₹{{ o.amount }}</span>
         </div>
         <div class="payrecord_list_item border">
-          <span>Status</span>
+          <span>{{ t('status') }}</span>
           <span class="payrecord_list_item_content">{{ o.status }}</span>
         </div>
         <div class="payrecord_list_item">
-          <span>Date</span>
+          <span>{{ t('date') }}</span>
           <span class="payrecord_list_item_content">{{ o.date }}</span>
         </div>
       </div>

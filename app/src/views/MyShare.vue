@@ -1,13 +1,41 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
 
 const { toast } = useToast();
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'My Shares',
+      tabWinning: 'Winning records',
+      tabParticipation: 'My participation',
+      empty: 'No shares yet',
+      winningRecord: 'Winning record',
+      code: 'Code',
+      sharesLabel: 'shares',
+      shared: 'Shared',
+      showOff: 'Show off',
+    },
+    hi: {
+      navTitle: 'मेरे शेयर',
+      tabWinning: 'जीत के रिकॉर्ड',
+      tabParticipation: 'मेरी भागीदारी',
+      empty: 'अभी कोई शेयर नहीं',
+      winningRecord: 'जीत का रिकॉर्ड',
+      code: 'कोड',
+      sharesLabel: 'शेयर',
+      shared: 'शेयर किया गया',
+      showOff: 'दिखाएं',
+    },
+  },
+});
 const list = ref([]);
 const tab = ref(0);
-const tabs = ['Winning records', 'My participation'];
+const tabs = computed(() => [t('tabWinning'), t('tabParticipation')]);
 
 onMounted(async () => {
   try { list.value = (await api.myWinners()).list || []; }
@@ -18,7 +46,7 @@ onMounted(async () => {
 <!-- Faithful rebuild of the real pages/winner/myShare (.winner) + scoped CSS. -->
 <template>
   <div class="winner">
-    <NavBar title="My Shares" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="share_bar">
       <div v-for="(tb, i) in tabs" :key="tb" class="share_bar_item" @click="tab = i">
@@ -29,25 +57,25 @@ onMounted(async () => {
 
     <div v-if="!list.length" class="empty2">
       <img src="/static/image/nodata.png" alt="" />
-      <div>No shares yet</div>
+      <div>{{ t('empty') }}</div>
     </div>
 
     <div class="card_list">
       <div v-for="w in list" :key="w.id" class="card_list_item">
-        <div class="card_list_item_title">Winning record · {{ w.date }}</div>
+        <div class="card_list_item_title">{{ t('winningRecord') }} · {{ w.date }}</div>
         <div class="card_list_item_main">
           <div class="card_list_item_main_img">
             <img src="/static/image/record/img_YouWon.png" alt="" />
           </div>
           <div class="card_list_item_main_title">
             {{ w.product }}
-            <div class="card_list_item_sub">Code {{ w.code }} · {{ w.shares }} shares</div>
+            <div class="card_list_item_sub">{{ t('code') }} {{ w.code }} · {{ w.shares }} {{ t('sharesLabel') }}</div>
           </div>
         </div>
         <div class="card_list_comment">
-          <div class="card_list_comment_btn" @click="toast('Shared')">
+          <div class="card_list_comment_btn" @click="toast(t('shared'))">
             <img src="/static/image/record/icon_Share.png" alt="" />
-            <span>Show off</span>
+            <span>{{ t('showOff') }}</span>
           </div>
         </div>
       </div>

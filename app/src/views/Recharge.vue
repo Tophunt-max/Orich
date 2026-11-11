@@ -30,18 +30,11 @@ onMounted(async () => {
 });
 function pick(v) { amount.value = v; custom.value = ''; }
 
-async function pay() {
+function pay() {
   const value = Number(custom.value) || amount.value;
   if (!value || value < 1) return toast(t('recharge.choose'));
-  busy.value = true;
-  try {
-    const data = await api.recharge(value);
-    api.track('recharge', { amount: value });
-    auth.user = { ...auth.user, balance: data.balance };
-    toast(t('recharge.success') + ' · ₹' + data.balance);
-    amount.value = 0; custom.value = '';
-  } catch (e) { toast(e.message); }
-  finally { busy.value = false; }
+  // Real app opens the payment gateway (webview) and confirms via paystatus.
+  router.push({ path: '/payform', query: { amount: Number(value).toFixed(2), channel: channel.value, type: 'recharge' } });
 }
 </script>
 

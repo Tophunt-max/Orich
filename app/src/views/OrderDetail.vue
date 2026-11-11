@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
@@ -8,6 +9,47 @@ import { useToast } from '../components/useToast';
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Order Details',
+      congrats: 'Congratulations, you won!',
+      orderInfo: 'Order Information',
+      item: 'Item',
+      amount: 'Amount',
+      shares: 'Shares',
+      status: 'Status',
+      orderNo: 'Order No.',
+      date: 'Date',
+      notFound: 'Order not found',
+      share: 'Share',
+      applyRefund: 'Apply for refund',
+      back: 'Back',
+      shareCopied: 'Share link copied',
+      shareUnavailable: 'Share link unavailable',
+      afsSubmitted: 'After-sales request submitted',
+    },
+    hi: {
+      navTitle: 'ऑर्डर विवरण',
+      congrats: 'बधाई हो, आप जीत गए!',
+      orderInfo: 'ऑर्डर जानकारी',
+      item: 'वस्तु',
+      amount: 'राशि',
+      shares: 'शेयर',
+      status: 'स्थिति',
+      orderNo: 'ऑर्डर नं.',
+      date: 'तारीख',
+      notFound: 'ऑर्डर नहीं मिला',
+      share: 'शेयर करें',
+      applyRefund: 'रिफंड के लिए आवेदन करें',
+      back: 'वापस',
+      shareCopied: 'शेयर लिंक कॉपी किया गया',
+      shareUnavailable: 'शेयर लिंक उपलब्ध नहीं',
+      afsSubmitted: 'आफ्टर-सेल्स अनुरोध सबमिट किया गया',
+    },
+  },
+});
 const o = ref(null);
 const afsCount = ref(0);
 const sharing = ref(false);
@@ -31,11 +73,11 @@ async function share() {
     const link = data?.link || '';
     if (link && navigator.clipboard?.writeText) {
       try { await navigator.clipboard.writeText(link); } catch { /* clipboard blocked */ }
-      toast('Share link copied');
+      toast(t('shareCopied'));
     } else if (link) {
       toast(link);
     } else {
-      toast('Share link unavailable');
+      toast(t('shareUnavailable'));
     }
   } catch (e) { toast(e.message); }
   finally { sharing.value = false; }
@@ -46,7 +88,7 @@ async function applyAfs() {
   applying.value = true;
   try {
     const data = await api.afsEdit(o.value.id, 'apply');
-    toast(data?.msg || 'After-sales request submitted');
+    toast(data?.msg || t('afsSubmitted'));
     try {
       const r = await api.afsList();
       afsCount.value = (r?.list || []).length;
@@ -65,7 +107,7 @@ const isWon = computed(() => ['success', 'rewarded', 'won'].includes(o.value?.st
      order info rows, won/share header, shipping address + logistics line, actions. -->
 <template>
   <div class="detail">
-    <NavBar title="Order Details" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="detail_main">
       <template v-if="o">
@@ -73,7 +115,7 @@ const isWon = computed(() => ['success', 'rewarded', 'won'].includes(o.value?.st
         <div v-if="isWon" class="detail_share">
           <div class="detail_share_left">
             <div class="red_icon"></div>
-            <div class="detail_share_left_title">Congratulations, you won!</div>
+            <div class="detail_share_left_title">{{ t('congrats') }}</div>
           </div>
           <img class="detail_share_right" src="/static/image/record/icon_Share.png" alt="" />
         </div>
@@ -81,32 +123,32 @@ const isWon = computed(() => ['success', 'rewarded', 'won'].includes(o.value?.st
         <div class="detail_main_order">
           <div class="detail_main_title">
             <div class="red_icon"></div>
-            <div class="detail_main_title_font">Order Information</div>
+            <div class="detail_main_title_font">{{ t('orderInfo') }}</div>
           </div>
 
           <div class="detail_main_item">
-            <span class="gray">Item</span>
+            <span class="gray">{{ t('item') }}</span>
             <span class="detail_main_status item_list">{{ o.product || o.type }}</span>
           </div>
           <div class="detail_main_item">
-            <span class="gray">Amount</span>
+            <span class="gray">{{ t('amount') }}</span>
             <span class="detail_main_status red">₹{{ o.amount }}</span>
           </div>
           <div class="detail_main_item" v-if="o.shares">
-            <span class="gray">Shares</span>
+            <span class="gray">{{ t('shares') }}</span>
             <span class="detail_main_status">{{ o.shares }}</span>
           </div>
           <div class="detail_main_item">
-            <span class="gray">Status</span>
+            <span class="gray">{{ t('status') }}</span>
             <span class="detail_main_status">{{ o.status }}</span>
           </div>
           <div class="border"></div>
           <div class="detail_main_item">
-            <span class="gray">Order No.</span>
+            <span class="gray">{{ t('orderNo') }}</span>
             <span class="detail_main_status">#{{ o.id }}</span>
           </div>
           <div class="detail_main_item">
-            <span class="gray">Date</span>
+            <span class="gray">{{ t('date') }}</span>
             <span class="detail_main_status">{{ o.date }}</span>
           </div>
 
@@ -137,16 +179,16 @@ const isWon = computed(() => ['success', 'rewarded', 'won'].includes(o.value?.st
       </template>
       <div v-else class="empty2">
         <img src="/static/image/nodata.png" alt="" />
-        <div>Order not found</div>
+        <div>{{ t('notFound') }}</div>
       </div>
     </div>
 
     <div class="detail_append">
-      <button v-if="o" class="detail_append_btn ghost" :disabled="sharing" @click="share">Share</button>
+      <button v-if="o" class="detail_append_btn ghost" :disabled="sharing" @click="share">{{ t('share') }}</button>
       <button v-if="o" class="detail_append_btn ghost" :disabled="applying" @click="applyAfs">
-        Apply for refund<span v-if="afsCount" class="afs_badge">{{ afsCount }}</span>
+        {{ t('applyRefund') }}<span v-if="afsCount" class="afs_badge">{{ afsCount }}</span>
       </button>
-      <button class="detail_append_btn" @click="router.back()">Back</button>
+      <button class="detail_append_btn" @click="router.back()">{{ t('back') }}</button>
     </div>
   </div>
 </template>

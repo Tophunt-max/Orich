@@ -1,6 +1,22 @@
 <script setup>
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 const router = useRouter();
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      welcome: 'Welcome to ORich',
+      sub: 'Join group-buys from ₹1, win big products, and withdraw your rewards anytime.',
+      getStarted: 'Get started',
+    },
+    hi: {
+      welcome: 'ORich में आपका स्वागत है',
+      sub: '₹1 से ग्रुप-बाय में शामिल हों, बड़े उत्पाद जीतें, और अपने इनाम कभी भी निकालें।',
+      getStarted: 'शुरू करें',
+    },
+  },
+});
 </script>
 
 <!-- Faithful rebuild of the real pages/intro (.download) guide screen + scoped CSS. -->
@@ -8,12 +24,12 @@ const router = useRouter();
   <div class="download">
     <div class="intro_hero">
       <img class="intro_logo" src="/static/image/logo.png" alt="ORich" />
-      <div class="intro_title">Welcome to ORich</div>
-      <div class="intro_sub">Join group-buys from ₹1, win big products, and withdraw your rewards anytime.</div>
+      <div class="intro_title">{{ t('welcome') }}</div>
+      <div class="intro_sub">{{ t('sub') }}</div>
     </div>
 
     <div class="suc-btn">
-      <div class="suc-btn-detail" @click="router.replace('/home')">Get started</div>
+      <div class="suc-btn-detail" @click="router.replace('/home')">{{ t('getStarted') }}</div>
     </div>
   </div>
 </template>

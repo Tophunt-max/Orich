@@ -1,10 +1,45 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
 
 const { toast } = useToast();
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: {
+    navTitle: 'My Finance',
+    totalInvested: 'Total Invested',
+    activeOrders: 'Active orders',
+    totalAmount: 'Total amount',
+    inProgress: 'In Progress',
+    completed: 'Completed',
+    emptyActive: 'No active investments',
+    emptyDone: 'No completed investments',
+    amount: 'Amount',
+    status: 'Status',
+    progress: 'Progress',
+    earned: 'Earned',
+    daysLeft: '· {n} days left',
+    date: 'Date',
+  },
+  hi: {
+    navTitle: 'मेरा फाइनेंस',
+    totalInvested: 'कुल निवेश',
+    activeOrders: 'सक्रिय ऑर्डर',
+    totalAmount: 'कुल राशि',
+    inProgress: 'जारी',
+    completed: 'पूर्ण',
+    emptyActive: 'कोई सक्रिय निवेश नहीं',
+    emptyDone: 'कोई पूर्ण निवेश नहीं',
+    amount: 'राशि',
+    status: 'स्थिति',
+    progress: 'प्रगति',
+    earned: 'कमाया',
+    daysLeft: '· {n} दिन बाकी',
+    date: 'तारीख',
+  },
+} });
 const list = ref([]);
 const tab = ref('active'); // active | done
 
@@ -22,18 +57,18 @@ const count = computed(() => list.value.length);
 <!-- Faithful rebuild of the real pages/finance/order (.order) + scoped CSS. -->
 <template>
   <div class="order">
-    <NavBar title="My Finance" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="order_total">
-      <div class="order_total_income">Total Invested</div>
+      <div class="order_total_income">{{ t('totalInvested') }}</div>
       <div class="order_total_income_num">₹{{ total }}</div>
       <div class="order_total_amount">
         <div class="order_total_amount_item">
-          <div class="title">Active orders</div>
+          <div class="title">{{ t('activeOrders') }}</div>
           <div class="number">{{ count }}</div>
         </div>
         <div class="order_total_amount_item">
-          <div class="title">Total amount</div>
+          <div class="title">{{ t('totalAmount') }}</div>
           <div class="number">₹{{ total }}</div>
         </div>
       </div>
@@ -42,18 +77,18 @@ const count = computed(() => list.value.length);
     <div class="order_list">
       <div class="order_list_tab">
         <div class="order_list_tab_item" @click="tab = 'active'">
-          <div :class="tab === 'active' ? 'active' : 'name'">In Progress</div>
+          <div :class="tab === 'active' ? 'active' : 'name'">{{ t('inProgress') }}</div>
           <div v-if="tab === 'active'" class="img"></div>
         </div>
         <div class="order_list_tab_item" @click="tab = 'done'">
-          <div :class="tab === 'done' ? 'active' : 'name'">Completed</div>
+          <div :class="tab === 'done' ? 'active' : 'name'">{{ t('completed') }}</div>
           <div v-if="tab === 'done'" class="img"></div>
         </div>
       </div>
 
       <div v-if="!shown.length" class="empty2">
         <img src="/static/image/nodata.png" alt="" onerror="this.style.display='none'" />
-        <div>{{ tab === 'active' ? 'No active investments' : 'No completed investments' }}</div>
+        <div>{{ tab === 'active' ? t('emptyActive') : t('emptyDone') }}</div>
       </div>
 
       <div class="order_list_card">
@@ -61,25 +96,25 @@ const count = computed(() => list.value.length);
           <div class="order_list_card_item_title">{{ o.product }}</div>
           <div class="order_list_card_item_total">
             <div class="order_list_card_item_total_strip">
-              <div class="title">Amount</div>
+              <div class="title">{{ t('amount') }}</div>
               <div class="number">₹{{ o.amount }}</div>
             </div>
             <div class="order_list_card_item_total_strip">
-              <div class="title">Status</div>
+              <div class="title">{{ t('status') }}</div>
               <div class="number endin">{{ o.status }}</div>
             </div>
           </div>
           <div class="order_list_card_item_pro">
-            <div class="order_list_card_item_pro_title">Progress</div>
+            <div class="order_list_card_item_pro_title">{{ t('progress') }}</div>
             <div class="order_list_card_item_pro_gress"><span :style="{ width: (o.progress || 0) + '%' }"></span></div>
             <div class="order_list_card_item_pro_num">{{ o.progress || 0 }}%</div>
           </div>
           <div class="order_list_card_item_pro mr_top36">
-            <div class="order_list_card_item_pro_title">Earned</div>
-            <div class="order_list_card_item_pro_time">₹{{ o.earned ?? '0.00' }}<template v-if="o.daysLeft != null"> · {{ o.daysLeft }} days left</template></div>
+            <div class="order_list_card_item_pro_title">{{ t('earned') }}</div>
+            <div class="order_list_card_item_pro_time">₹{{ o.earned ?? '0.00' }}<template v-if="o.daysLeft != null"> {{ t('daysLeft', { n: o.daysLeft }) }}</template></div>
           </div>
           <div class="order_list_card_item_pro mr_top36">
-            <div class="order_list_card_item_pro_title">Date</div>
+            <div class="order_list_card_item_pro_title">{{ t('date') }}</div>
             <div class="order_list_card_item_pro_time">{{ o.date }}</div>
           </div>
         </div>

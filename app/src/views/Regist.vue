@@ -1,9 +1,46 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      enterPhone: 'Enter phone number',
+      demoCode: 'Demo code: {code}',
+      enterPhoneCode: 'Enter phone and code',
+      register: 'Register',
+      createAccount: 'Create your ORich account',
+      phoneNumber: 'Phone Number',
+      phonePlaceholder: 'Enter phone number',
+      verificationCode: 'Verification Code',
+      codePlaceholder: 'Enter code',
+      sendOtp: 'Send OTP',
+      invitationCode: 'Invitation code',
+      optional: 'Optional',
+      registerSuccess: 'Registration successful! Welcome to ORich.',
+    },
+    hi: {
+      enterPhone: 'फ़ोन नंबर दर्ज करें',
+      demoCode: 'डेमो कोड: {code}',
+      enterPhoneCode: 'फ़ोन नंबर और कोड दर्ज करें',
+      register: 'रजिस्टर करें',
+      createAccount: 'अपना ORich खाता बनाएं',
+      phoneNumber: 'फ़ोन नंबर',
+      phonePlaceholder: 'फ़ोन नंबर दर्ज करें',
+      verificationCode: 'सत्यापन कोड',
+      codePlaceholder: 'कोड दर्ज करें',
+      sendOtp: 'OTP भेजें',
+      invitationCode: 'आमंत्रण कोड',
+      optional: 'वैकल्पिक',
+      registerSuccess: 'पंजीकरण सफल! ORich में आपका स्वागत है।',
+    },
+  },
+});
 
 const router = useRouter();
 const auth = useAuth();
@@ -17,17 +54,17 @@ const busy = ref(false);
 const showSuccess = ref(false);
 
 async function send() {
-  if (!phone.value) return toast('Enter phone number');
+  if (!phone.value) return toast(t('enterPhone'));
   try {
     const d = await api.sendVerify(phone.value);
     cd.value = 60;
     const t = setInterval(() => { if (--cd.value <= 0) clearInterval(t); }, 1000);
-    if (d.demoCode) { code.value = d.demoCode; toast('Demo code: ' + d.demoCode); }
+    if (d.demoCode) { code.value = d.demoCode; toast(t('demoCode', { code: d.demoCode })); }
   } catch (e) { toast(e.message); }
 }
 
 async function submit() {
-  if (!phone.value || !code.value) return toast('Enter phone and code');
+  if (!phone.value || !code.value) return toast(t('enterPhoneCode'));
   busy.value = true;
   try {
     await auth.signIn(phone.value, code.value, invite.value);
@@ -44,38 +81,38 @@ async function submit() {
   <div class="login">
     <div class="backicon" @click="router.back()"><span class="back-arrow">‹</span></div>
 
-    <div class="title">Register</div>
-    <div class="tips">Create your ORich account</div>
+    <div class="title">{{ t('register') }}</div>
+    <div class="tips">{{ t('createAccount') }}</div>
 
-    <div class="input-title">Phone Number</div>
+    <div class="input-title">{{ t('phoneNumber') }}</div>
     <div class="inputview">
       <img class="inputview-flag" src="/static/image/login/icon_iphone.png" alt="" />
       <span class="inputview-num">+91</span>
       <span class="inputview-op"></span>
-      <input class="inputview-input" v-model="phone" type="tel" inputmode="numeric" placeholder="Enter phone number" />
+      <input class="inputview-input" v-model="phone" type="tel" inputmode="numeric" :placeholder="t('phonePlaceholder')" />
     </div>
 
-    <div class="input-title">Verification Code</div>
+    <div class="input-title">{{ t('verificationCode') }}</div>
     <div class="send">
-      <input class="send-input" v-model="code" inputmode="numeric" placeholder="Enter code" />
-      <div class="wrap" @click="cd === 0 && send()">{{ cd > 0 ? cd + 's' : 'Send OTP' }}</div>
+      <input class="send-input" v-model="code" inputmode="numeric" :placeholder="t('codePlaceholder')" />
+      <div class="wrap" @click="cd === 0 && send()">{{ cd > 0 ? cd + 's' : t('sendOtp') }}</div>
     </div>
 
     <div class="invitation">
-      <div class="code_people">Invitation code</div>
+      <div class="code_people">{{ t('invitationCode') }}</div>
       <div class="code_ipu">
         <img src="/static/image/login/icon_invitation.png" alt="" />
-        <input class="inputview-input ipu" v-model="invite" placeholder="Optional" />
+        <input class="inputview-input ipu" v-model="invite" :placeholder="t('optional')" />
       </div>
     </div>
 
-    <button class="nextbtn" :disabled="busy" @click="submit">Register</button>
+    <button class="nextbtn" :disabled="busy" @click="submit">{{ t('register') }}</button>
 
     <!-- success popup -->
     <template v-if="showSuccess">
       <div class="popup"></div>
       <div class="pop_suc">
-        <div class="content_suc">Registration successful! Welcome to ORich.</div>
+        <div class="content_suc">{{ t('registerSuccess') }}</div>
       </div>
       <div class="round_suc"><img src="/static/image/home/sus.png" alt="" /></div>
     </template>

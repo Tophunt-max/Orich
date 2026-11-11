@@ -65,6 +65,7 @@ const nav = [
   ...Object.entries(COLLECTIONS).map(([id, c]) => ({ id, label: c.label })),
   { id: 'users', label: 'Users' },
   { id: 'orders', label: 'Orders' },
+  { id: 'events', label: 'Analytics' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -75,6 +76,7 @@ const users = ref([]);
 const orders = ref([]);
 const settings = reactive({ name: '', notice: '', service: '', tabBarColor: '', tabBarActive: '' });
 const orderType = ref('');
+const events = ref(null);
 
 const colDef = computed(() => COLLECTIONS[section.value]);
 
@@ -83,6 +85,7 @@ async function loadSection() {
   if (s === 'dashboard') { stats.value = await api.stats(); Object.assign(settings, stats.value.settings); }
   else if (s === 'users') users.value = (await api.users()).list;
   else if (s === 'orders') orders.value = (await api.orders(orderType.value)).list;
+  else if (s === 'events') events.value = await api.events();
   else if (s === 'settings') { if (!stats.value) stats.value = await api.stats(); Object.assign(settings, stats.value.settings); }
   else if (COLLECTIONS[s]) rows.value = (await api.collection(s)).list;
 }
@@ -197,6 +200,8 @@ onMounted(() => { if (authed.value) loadSection(); });
         <div class="stat"><div class="n">₹{{ stats.withdraw }}</div><div class="l">Withdrawn</div></div>
         <div class="stat" :class="{ alert: stats.pendingWithdraw > 0 }"><div class="n">{{ stats.pendingWithdraw }}</div><div class="l">Pending withdrawals</div></div>
         <div class="stat" :class="{ alert: stats.pendingRecharge > 0 }"><div class="n">{{ stats.pendingRecharge }}</div><div class="l">Pending recharges</div></div>
+        <div class="stat"><div class="n">{{ stats.notifications }}</div><div class="l">Notifications</div></div>
+        <div class="stat"><div class="n">{{ stats.events }}</div><div class="l">Analytics events</div></div>
       </div>
 
       <!-- Collections -->
@@ -266,6 +271,26 @@ onMounted(() => { if (authed.value) loadSection(); });
               </td>
             </tr>
             <tr v-if="!orders.length"><td colspan="8" class="muted">No orders yet.</td></tr>
+          </tbody>
+        </table>
+      </template>
+
+      <!-- Analytics / events -->
+      <template v-else-if="section === 'events' && events">
+        <div class="cards" style="margin-bottom:16px">
+          <div class="stat"><div class="n">{{ events.total }}</div><div class="l">Total events</div></div>
+          <div v-for="(c, name) in events.counts" :key="name" class="stat"><div class="n">{{ c }}</div><div class="l">{{ name }}</div></div>
+        </div>
+        <h3 style="margin:0 0 8px;font-size:15px;color:#17273a">Recent events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>User</th><th>Props</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr v-for="(e, i) in events.recent" :key="i">
+              <td>{{ e.name }}</td><td>{{ e.userId || '—' }}</td>
+              <td class="muted">{{ JSON.stringify(e.props) }}</td>
+              <td>{{ new Date(e.ts).toLocaleString() }}</td>
+            </tr>
+            <tr v-if="!events.recent.length"><td colspan="4" class="muted">No events yet — use the app to generate events.</td></tr>
           </tbody>
         </table>
       </template>

@@ -1,8 +1,27 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
+
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Customer Service',
+      email: 'Email',
+      serviceHours: 'Service Hours',
+      copied: 'Copied',
+    },
+    hi: {
+      navTitle: 'ग्राहक सेवा',
+      email: 'ईमेल',
+      serviceHours: 'सेवा के घंटे',
+      copied: 'कॉपी हो गया',
+    },
+  },
+});
 
 const { toast } = useToast();
 const service = ref('https://wa.me/910000000000');
@@ -18,7 +37,7 @@ function openWhatsApp() {
   window.open(service.value, '_blank');
 }
 async function copyEmail() {
-  try { await navigator.clipboard.writeText('support@orich.com'); toast('Copied'); }
+  try { await navigator.clipboard.writeText('support@orich.com'); toast(t('copied')); }
   catch { toast('support@orich.com'); }
 }
 </script>
@@ -26,18 +45,18 @@ async function copyEmail() {
 <!-- Faithful rebuild of the real pages/account/service layout + scoped CSS. -->
 <template>
   <div class="setting">
-    <NavBar title="Customer Service" />
+    <NavBar :title="t('navTitle')" />
     <div class="middle">
       <div class="name" @click="openWhatsApp">
         <span class="name_title">WhatsApp</span>
         <span class="name_info">{{ service }}</span>
       </div>
       <div class="name" @click="copyEmail">
-        <span class="name_title">Email</span>
+        <span class="name_title">{{ t('email') }}</span>
         <span class="name_info">support@orich.com</span>
       </div>
       <div class="name">
-        <span class="name_title">Service Hours</span>
+        <span class="name_title">{{ t('serviceHours') }}</span>
         <span class="name_info">09:00 - 21:00</span>
       </div>
     </div>

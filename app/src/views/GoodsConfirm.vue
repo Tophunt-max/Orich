@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
@@ -10,6 +11,29 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuth();
 const { toast } = useToast();
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Confirm Order',
+      product: 'Product',
+      walletBalance: 'Wallet balance',
+      paymentMethod: 'Payment method',
+      perShare: '/ share',
+      payNow: 'Pay now',
+      joined: 'Joined ✓',
+    },
+    hi: {
+      navTitle: 'ऑर्डर की पुष्टि करें',
+      product: 'उत्पाद',
+      walletBalance: 'वॉलेट बैलेंस',
+      paymentMethod: 'भुगतान का तरीका',
+      perShare: '/ शेयर',
+      payNow: 'अभी भुगतान करें',
+      joined: 'शामिल हुए ✓',
+    },
+  },
+});
 
 const item = ref(null);
 const shares = ref(Number(route.query.shares) || 1);
@@ -18,11 +42,11 @@ const cost = computed(() => (item.value ? (shares.value * item.value.price).toFi
 
 // Payment methods. The backend settles joins against the wallet balance, so UPI/Paytm
 // are presentational options here — wire a real gateway later.
-const pays = [
-  { key: 'wallet', name: 'Wallet balance', icon: '/static/image/account/bg_Wallet.png' },
+const pays = computed(() => [
+  { key: 'wallet', name: t('walletBalance'), icon: '/static/image/account/bg_Wallet.png' },
   { key: 'upi', name: 'UPI', icon: '/static/image/goods/upi.png' },
   { key: 'paytm', name: 'Paytm', icon: '/static/image/goods/paytm.png' },
-];
+]);
 const pay = ref('wallet');
 
 onMounted(async () => { item.value = (await api.product(route.params.id)).item; await auth.refresh(); });
@@ -32,7 +56,7 @@ async function confirm() {
   try {
     const d = await api.join(item.value.id, shares.value);
     auth.user = { ...auth.user, balance: d.balance };
-    toast('Joined ✓');
+    toast(t('joined'));
     router.replace('/success');
   } catch (e) { toast(e.message); } finally { busy.value = false; }
 }
@@ -42,10 +66,10 @@ async function confirm() {
      list and the fixed bottom pay bar. -->
 <template>
   <div class="comfirm" v-if="item">
-    <NavBar title="Confirm Order" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="detail">
-      <div class="comfirm-title"><span class="comfirm-op"></span>Product</div>
+      <div class="comfirm-title"><span class="comfirm-op"></span>{{ t('product') }}</div>
       <div class="goods">
         <img :src="item.cover" alt="" />
         <div class="goods-desc">
@@ -55,7 +79,7 @@ async function confirm() {
           </div>
           <div class="goods-finance">
             <div class="price">{{ item.subtitle }}</div>
-            <div class="interest">₹{{ item.price }} / share</div>
+            <div class="interest">₹{{ item.price }} {{ t('perShare') }}</div>
           </div>
           <div class="goods-price">
             <div class="goods-price-old">₹{{ item.marketValue.toLocaleString('en-IN') }}</div>
@@ -68,7 +92,7 @@ async function confirm() {
     <img class="c-divider" src="/static/image/goods/img_Dividingline.png" alt="" />
 
     <div class="pay">
-      <div class="comfirm-title"><span class="comfirm-op"></span>Payment method</div>
+      <div class="comfirm-title"><span class="comfirm-op"></span>{{ t('paymentMethod') }}</div>
       <div class="pay-list">
         <div v-for="p in pays" :key="p.key" class="pay-item" @click="pay = p.key">
           <img class="pay-icon" :src="p.icon" alt="" />
@@ -84,7 +108,7 @@ async function confirm() {
           <div class="btn-price-new">₹{{ cost }}</div>
           <div class="btn-price-old">₹{{ item.marketValue.toLocaleString('en-IN') }}</div>
         </div>
-        <button class="btn-btn" :disabled="busy" @click="confirm">Pay now</button>
+        <button class="btn-btn" :disabled="busy" @click="confirm">{{ t('payNow') }}</button>
       </div>
     </div>
   </div>

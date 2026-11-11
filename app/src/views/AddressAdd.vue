@@ -1,22 +1,53 @@
 <script setup>
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
 
 const router = useRouter();
 const { toast } = useToast();
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: {
+    navTitle: 'Add Address',
+    name: 'Name',
+    namePh: 'Receiver name',
+    phone: 'Phone',
+    phonePh: 'Phone number',
+    pincode: 'Pincode',
+    pincodePh: 'PIN code',
+    address: 'Address',
+    addressPh: 'House, street, city',
+    save: 'Save address',
+    errFill: 'Fill name and address',
+    saved: 'Saved',
+  },
+  hi: {
+    navTitle: 'पता जोड़ें',
+    name: 'नाम',
+    namePh: 'प्राप्तकर्ता का नाम',
+    phone: 'फ़ोन',
+    phonePh: 'फ़ोन नंबर',
+    pincode: 'पिनकोड',
+    pincodePh: 'पिन कोड',
+    address: 'पता',
+    addressPh: 'मकान, गली, शहर',
+    save: 'पता सेव करें',
+    errFill: 'नाम और पता भरें',
+    saved: 'सेव हो गया',
+  },
+} });
 const f = reactive({ name: '', phone: '', pincode: '', address: '' });
 const busy = ref(false);
 
 async function save() {
-  if (!f.name || !f.address) return toast('Fill name and address');
+  if (!f.name || !f.address) return toast(t('errFill'));
   busy.value = true;
   const line = [f.address, f.pincode].filter(Boolean).join(', ');
   try {
     await api.addressAdd({ name: f.name, phone: f.phone, pincode: f.pincode, line });
-    toast('Saved');
+    toast(t('saved'));
     router.back();
   } catch (e) { toast(e.message); } finally { busy.value = false; }
 }
@@ -25,28 +56,28 @@ async function save() {
 <!-- Faithful rebuild of the real pages/address/add (.add) + scoped CSS. -->
 <template>
   <div class="add">
-    <NavBar title="Add Address" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="content">
       <div class="receiver">
-        <span class="receiver_left reces">Name</span>
-        <input class="input" v-model="f.name" placeholder="Receiver name" />
+        <span class="receiver_left reces">{{ t('name') }}</span>
+        <input class="input" v-model="f.name" :placeholder="t('namePh')" />
       </div>
       <div class="receiver">
-        <span class="receiver_left phone">Phone</span>
-        <input class="input" v-model="f.phone" inputmode="numeric" placeholder="Phone number" />
+        <span class="receiver_left phone">{{ t('phone') }}</span>
+        <input class="input" v-model="f.phone" inputmode="numeric" :placeholder="t('phonePh')" />
       </div>
       <div class="receiver">
-        <span class="receiver_left city">Pincode</span>
-        <input class="input" v-model="f.pincode" inputmode="numeric" placeholder="PIN code" />
+        <span class="receiver_left city">{{ t('pincode') }}</span>
+        <input class="input" v-model="f.pincode" inputmode="numeric" :placeholder="t('pincodePh')" />
       </div>
       <div class="bottom_address">
-        <span class="receiver_left address">Address</span>
-        <input class="input" v-model="f.address" placeholder="House, street, city" />
+        <span class="receiver_left address">{{ t('address') }}</span>
+        <input class="input" v-model="f.address" :placeholder="t('addressPh')" />
       </div>
     </div>
 
-    <button class="addbtn" :disabled="busy" @click="save">Save address</button>
+    <button class="addbtn" :disabled="busy" @click="save">{{ t('save') }}</button>
   </div>
 </template>
 

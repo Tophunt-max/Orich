@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
 import { useToast } from '../components/useToast';
@@ -8,6 +9,61 @@ import { useToast } from '../components/useToast';
 const router = useRouter();
 const auth = useAuth();
 const { toast } = useToast();
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      luckyBall: 'Lucky Ball',
+      rules: 'Rules',
+      balance: 'Balance',
+      recharge: 'Recharge',
+      notice: 'Pick a colour and win instantly',
+      period: 'Period',
+      countdown: 'Countdown',
+      tips: 'Choose a colour, then a number to join the round',
+      green: 'Green',
+      violet: 'Violet',
+      red: 'Red',
+      myOrders: 'My Orders',
+      records: 'Records',
+      noOrders: 'No orders yet',
+      noRecords: 'No records yet',
+      entryConfirmed: 'Entry confirmed on',
+      couldNotBet: 'Could not place bet',
+      ruleWelcome: 'Welcome to Lucky Ball.',
+      rule1: '1. Each round lasts a few minutes. Choose a colour (Green, Violet or Red) or a specific number.',
+      rule2: '2. When the countdown ends, a winning number is drawn.',
+      rule3: '3. Green and Red numbers pay 2x; Violet numbers pay more. Matching the exact number pays the most.',
+      rule4: '4. Entries cost ₹{amount} and are settled to your balance automatically.',
+      ruleResponsible: 'Play responsibly. Bet only what you can afford.',
+    },
+    hi: {
+      luckyBall: 'लकी बॉल',
+      rules: 'नियम',
+      balance: 'बैलेंस',
+      recharge: 'रिचार्ज',
+      notice: 'एक रंग चुनें और तुरंत जीतें',
+      period: 'अवधि',
+      countdown: 'उलटी गिनती',
+      tips: 'राउंड में शामिल होने के लिए एक रंग चुनें, फिर एक नंबर',
+      green: 'हरा',
+      violet: 'बैंगनी',
+      red: 'लाल',
+      myOrders: 'मेरे ऑर्डर',
+      records: 'रिकॉर्ड',
+      noOrders: 'अभी कोई ऑर्डर नहीं',
+      noRecords: 'अभी कोई रिकॉर्ड नहीं',
+      entryConfirmed: 'एंट्री पुष्टि हुई',
+      couldNotBet: 'दांव नहीं लगाया जा सका',
+      ruleWelcome: 'लकी बॉल में आपका स्वागत है।',
+      rule1: '1. प्रत्येक राउंड कुछ मिनट तक चलता है। एक रंग (हरा, बैंगनी या लाल) या कोई विशिष्ट नंबर चुनें।',
+      rule2: '2. उलटी गिनती समाप्त होने पर, एक विजेता नंबर निकाला जाता है।',
+      rule3: '3. हरे और लाल नंबर 2 गुना देते हैं; बैंगनी नंबर अधिक देते हैं। सटीक नंबर मिलाने पर सबसे अधिक मिलता है।',
+      rule4: '4. प्रत्येक एंट्री की लागत ₹{amount} है और यह स्वतः आपके बैलेंस में सेटल हो जाती है।',
+      ruleResponsible: 'जिम्मेदारी से खेलें। केवल उतना ही दांव लगाएं जितना आप वहन कर सकें।',
+    },
+  },
+});
 
 const showRule = ref(false);
 const tab = ref(0);
@@ -32,7 +88,7 @@ const balance = computed(() => {
   return typeof b === 'number' ? b.toFixed(2) : String(b);
 });
 
-const notice = computed(() => 'Pick a colour and win instantly');
+const notice = computed(() => t('notice'));
 
 // Number grid 0-9, each tagged with a colour group shown as a small circle.
 const numbers = [
@@ -108,9 +164,9 @@ async function place({ color, number = null }) {
     }
     const where = number == null ? color : color + ' ' + number;
     const bal = data?.balance != null ? ' · ₹' + data.balance : '';
-    toast('Entry confirmed on ' + where + bal);
+    toast(t('entryConfirmed') + ' ' + where + bal);
   } catch (e) {
-    toast(e.message || 'Could not place bet');
+    toast(e.message || t('couldNotBet'));
   } finally {
     busy.value = false;
   }
@@ -122,21 +178,21 @@ async function place({ color, number = null }) {
   <div class="game">
     <header class="gnav">
       <span class="back" @click="router.back()">‹</span>
-      <span class="gnav_title">Lucky Ball</span>
+      <span class="gnav_title">{{ t('luckyBall') }}</span>
       <div class="nav_help" @click="showRule = true">
         <img src="/static/image/icon_questionmark_blue.png" alt="" />
-        <span class="nav_help_rule">Rules</span>
+        <span class="nav_help_rule">{{ t('rules') }}</span>
       </div>
     </header>
 
     <div class="game_lucky">
       <div class="game_lucky_info">
         <div class="game_lucky_info_balance">
-          <div class="title">Balance</div>
+          <div class="title">{{ t('balance') }}</div>
           <div class="price"><span class="font32">₹</span><span class="font64">{{ balance }}</span></div>
         </div>
         <div class="game_lucky_info_recharge" @click="router.push('/recharge')">
-          <span class="title">Recharge</span>
+          <span class="title">{{ t('recharge') }}</span>
           <div class="icon"><img src="/static/image/home/icon_RightArrow.png" alt="" /></div>
         </div>
       </div>
@@ -155,18 +211,18 @@ async function place({ color, number = null }) {
 
       <div class="game_lucky_join">
         <div class="game_lucky_join_period">
-          <div class="game_lucky_join_period_issue title">Period #{{ period || '—' }}</div>
-          <div class="title">Countdown
+          <div class="game_lucky_join_period_issue title">{{ t('period') }} #{{ period || '—' }}</div>
+          <div class="title">{{ t('countdown') }}
             <div class="tdown">{{ countdown }}</div>
           </div>
         </div>
 
-        <div class="game_lucky_tips">Choose a colour, then a number to join the round</div>
+        <div class="game_lucky_tips">{{ t('tips') }}</div>
 
         <div class="game_lucky_join_select">
-          <div class="game_lucky_join_select_button cgreen" :class="{ unable: busy }" @click="place({ color: 'green' })">Green</div>
-          <div class="game_lucky_join_select_button cviolet" :class="{ unable: busy }" @click="place({ color: 'violet' })">Violet</div>
-          <div class="game_lucky_join_select_button cred" :class="{ unable: busy }" @click="place({ color: 'red' })">Red</div>
+          <div class="game_lucky_join_select_button cgreen" :class="{ unable: busy }" @click="place({ color: 'green' })">{{ t('green') }}</div>
+          <div class="game_lucky_join_select_button cviolet" :class="{ unable: busy }" @click="place({ color: 'violet' })">{{ t('violet') }}</div>
+          <div class="game_lucky_join_select_button cred" :class="{ unable: busy }" @click="place({ color: 'red' })">{{ t('red') }}</div>
         </div>
 
         <div class="game_lucky_join_nums">
@@ -182,18 +238,18 @@ async function place({ color, number = null }) {
 
     <div class="game_tab">
       <div class="game_tab_item" @click="tab = 0">
-        <div class="game_tab_item_title" :class="{ tabselect: tab === 0 }">My Orders</div>
+        <div class="game_tab_item_title" :class="{ tabselect: tab === 0 }">{{ t('myOrders') }}</div>
         <div v-if="tab === 0" class="game_tab_item_select"></div>
       </div>
       <div class="game_tab_item" @click="tab = 1">
-        <div class="game_tab_item_title" :class="{ tabselect: tab === 1 }">Records</div>
+        <div class="game_tab_item_title" :class="{ tabselect: tab === 1 }">{{ t('records') }}</div>
         <div v-if="tab === 1" class="game_tab_item_select"></div>
       </div>
     </div>
 
     <!-- My Orders tab: local/empty for now -->
     <div v-if="tab === 0" class="game_list">
-      <div class="game_list_empty">No orders yet</div>
+      <div class="game_list_empty">{{ t('noOrders') }}</div>
     </div>
 
     <!-- Records tab: past draw results from the backend -->
@@ -203,19 +259,19 @@ async function place({ color, number = null }) {
         <span class="game_record_number">{{ r.number }}</span>
         <span class="game_record_dot" :class="'c' + r.color"></span>
       </div>
-      <div v-if="!results.length" class="game_list_empty">No records yet</div>
+      <div v-if="!results.length" class="game_list_empty">{{ t('noRecords') }}</div>
     </div>
 
     <div v-if="showRule" class="mask" @click.self="showRule = false">
       <div class="game_rule_wrap">
         <div class="game_rule">
           <div class="game_rule_content">
-            <p>Welcome to Lucky Ball.</p>
-            <p>1. Each round lasts a few minutes. Choose a colour (Green, Violet or Red) or a specific number.</p>
-            <p>2. When the countdown ends, a winning number is drawn.</p>
-            <p>3. Green and Red numbers pay 2x; Violet numbers pay more. Matching the exact number pays the most.</p>
-            <p>4. Entries cost ₹{{ amount }} and are settled to your balance automatically.</p>
-            <p>Play responsibly. Bet only what you can afford.</p>
+            <p>{{ t('ruleWelcome') }}</p>
+            <p>{{ t('rule1') }}</p>
+            <p>{{ t('rule2') }}</p>
+            <p>{{ t('rule3') }}</p>
+            <p>{{ t('rule4', { amount }) }}</p>
+            <p>{{ t('ruleResponsible') }}</p>
           </div>
         </div>
         <div class="game_close" @click="showRule = false">

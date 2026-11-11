@@ -1,21 +1,52 @@
 <script setup>
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
 
 const router = useRouter();
 const { toast } = useToast();
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: {
+    navTitle: 'Add Payment Method',
+    bank: 'Bank',
+    bankPh: 'Bank name',
+    account: 'Account',
+    accountPh: 'Account number',
+    ifsc: 'IFSC',
+    ifscPh: 'IFSC code',
+    holder: 'Holder',
+    holderPh: 'Account holder name',
+    save: 'Save',
+    errFill: 'Enter bank name and account',
+    saved: 'Saved',
+  },
+  hi: {
+    navTitle: 'भुगतान तरीका जोड़ें',
+    bank: 'बैंक',
+    bankPh: 'बैंक का नाम',
+    account: 'खाता',
+    accountPh: 'खाता नंबर',
+    ifsc: 'IFSC',
+    ifscPh: 'IFSC कोड',
+    holder: 'धारक',
+    holderPh: 'खाताधारक का नाम',
+    save: 'सेव करें',
+    errFill: 'बैंक का नाम और खाता नंबर डालें',
+    saved: 'सेव हो गया',
+  },
+} });
 const f = reactive({ bankName: '', account: '', ifsc: '', holder: '' });
 const busy = ref(false);
 
 async function save() {
-  if (!f.bankName || !f.account) return toast('Enter bank name and account');
+  if (!f.bankName || !f.account) return toast(t('errFill'));
   busy.value = true;
   try {
     await api.bankAdd({ type: f.bankName, number: f.account, ifsc: f.ifsc, holder: f.holder });
-    toast('Saved');
+    toast(t('saved'));
     router.back();
   } catch (e) { toast(e.message); } finally { busy.value = false; }
 }
@@ -24,28 +55,28 @@ async function save() {
 <!-- Faithful rebuild of the real pages/payment/add (.add) + scoped CSS. -->
 <template>
   <div class="add">
-    <NavBar title="Add Payment Method" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="add_form">
       <div class="add_form_item border_bottom">
-        <div class="add_form_item_left">Bank</div>
-        <input class="add_form_item_right" v-model="f.bankName" placeholder="Bank name" />
+        <div class="add_form_item_left">{{ t('bank') }}</div>
+        <input class="add_form_item_right" v-model="f.bankName" :placeholder="t('bankPh')" />
       </div>
       <div class="add_form_item border_bottom">
-        <div class="add_form_item_left">Account</div>
-        <input class="add_form_item_right" v-model="f.account" inputmode="numeric" placeholder="Account number" />
+        <div class="add_form_item_left">{{ t('account') }}</div>
+        <input class="add_form_item_right" v-model="f.account" inputmode="numeric" :placeholder="t('accountPh')" />
       </div>
       <div class="add_form_item border_bottom">
-        <div class="add_form_item_left">IFSC</div>
-        <input class="add_form_item_right" v-model="f.ifsc" placeholder="IFSC code" />
+        <div class="add_form_item_left">{{ t('ifsc') }}</div>
+        <input class="add_form_item_right" v-model="f.ifsc" :placeholder="t('ifscPh')" />
       </div>
       <div class="add_form_item">
-        <div class="add_form_item_left">Holder</div>
-        <input class="add_form_item_right" v-model="f.holder" placeholder="Account holder name" />
+        <div class="add_form_item_left">{{ t('holder') }}</div>
+        <input class="add_form_item_right" v-model="f.holder" :placeholder="t('holderPh')" />
       </div>
     </div>
 
-    <button class="add_submin" :disabled="busy" @click="save">Save</button>
+    <button class="add_submin" :disabled="busy" @click="save">{{ t('save') }}</button>
   </div>
 </template>
 

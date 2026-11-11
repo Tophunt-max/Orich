@@ -1,11 +1,38 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { useToast } from '../components/useToast';
 
 const router = useRouter();
 const { toast } = useToast();
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: {
+    navTitle: 'Post a Single',
+    shopTitle: 'Show off your winning product and inspire others to join!',
+    titlePh: 'Add a title',
+    contentPh: 'Share how you won and what you think...',
+    tipsBefore: 'Add up to',
+    tipsAfter: 'photos',
+    addPhoto: 'Add photo',
+    submit: 'Submit',
+    promptShare: 'Write something to share',
+    submitted: 'Submitted for review',
+  },
+  hi: {
+    navTitle: 'एक पोस्ट करें',
+    shopTitle: 'अपना जीता हुआ प्रोडक्ट दिखाएँ और दूसरों को शामिल होने के लिए प्रेरित करें!',
+    titlePh: 'टाइटल जोड़ें',
+    contentPh: 'बताएँ कि आपने कैसे जीता और आपकी क्या राय है...',
+    tipsBefore: 'ज़्यादा से ज़्यादा',
+    tipsAfter: 'फ़ोटो जोड़ें',
+    addPhoto: 'फ़ोटो जोड़ें',
+    submit: 'सबमिट करें',
+    promptShare: 'शेयर करने के लिए कुछ लिखें',
+    submitted: 'समीक्षा के लिए सबमिट किया गया',
+  },
+} });
 const title = ref('');
 const content = ref('');
 const images = ref([]);
@@ -22,9 +49,9 @@ function pick(e) {
 function remove(i) { images.value.splice(i, 1); }
 
 function submit() {
-  if (!content.value.trim()) return toast('Write something to share');
+  if (!content.value.trim()) return toast(t('promptShare'));
   busy.value = true;
-  toast('Submitted for review');
+  toast(t('submitted'));
   setTimeout(() => { busy.value = false; router.back(); }, 700);
 }
 </script>
@@ -32,24 +59,24 @@ function submit() {
 <!-- Faithful rebuild of the real pages/bask/index (.bask) "post a win" form + scoped CSS. -->
 <template>
   <div class="bask">
-    <NavBar title="Post a Single" />
+    <NavBar :title="t('navTitle')" />
 
     <div class="content_middle">
       <div class="goods">
         <div class="shop_img"><img src="/static/image/goods/goods1.png" alt="" /></div>
-        <div class="shop_title">Show off your winning product and inspire others to join!</div>
+        <div class="shop_title">{{ t('shopTitle') }}</div>
       </div>
     </div>
 
     <div class="content">
       <div class="content-title">
-        <input v-model="title" placeholder="Add a title" style="flex:1;border:none;outline:none;background:transparent;font-size:14px;" />
+        <input v-model="title" :placeholder="t('titlePh')" style="flex:1;border:none;outline:none;background:transparent;font-size:14px;" />
       </div>
       <div class="content-main">
-        <textarea v-model="content" placeholder="Share how you won and what you think..." style="flex:1;border:none;outline:none;background:transparent;font-size:14px;resize:none;height:100%;padding:12px 0;"></textarea>
+        <textarea v-model="content" :placeholder="t('contentPh')" style="flex:1;border:none;outline:none;background:transparent;font-size:14px;resize:none;height:100%;padding:12px 0;"></textarea>
       </div>
 
-      <div class="tips">Add up to<span>6</span>photos</div>
+      <div class="tips">{{ t('tipsBefore') }}<span>6</span>{{ t('tipsAfter') }}</div>
 
       <div class="upload_file">
         <div v-for="(img, i) in images" :key="i" class="upload-item">
@@ -58,13 +85,13 @@ function submit() {
         </div>
         <label v-if="images.length < 6" class="btn">
           <span>+</span>
-          <span>Add photo</span>
+          <span>{{ t('addPhoto') }}</span>
           <input type="file" accept="image/*" multiple style="display:none" @change="pick" />
         </label>
       </div>
     </div>
 
-    <button class="success_btn" :disabled="busy" @click="submit">Submit</button>
+    <button class="success_btn" :disabled="busy" @click="submit">{{ t('submit') }}</button>
   </div>
 </template>
 

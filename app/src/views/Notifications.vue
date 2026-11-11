@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
@@ -7,6 +8,25 @@ import { useToast } from '../components/useToast';
 
 const auth = useAuth();
 const { toast } = useToast();
+const { t } = useI18n({
+  useScope: 'local',
+  messages: {
+    en: {
+      navTitle: 'Notifications',
+      readAll: 'Read all',
+      pleaseSignIn: 'Please sign in',
+      allMarkedRead: 'All marked read',
+      empty: 'No notifications',
+    },
+    hi: {
+      navTitle: 'सूचनाएं',
+      readAll: 'सभी पढ़ें',
+      pleaseSignIn: 'कृपया साइन इन करें',
+      allMarkedRead: 'सभी पढ़ा हुआ चिह्नित',
+      empty: 'कोई सूचना नहीं',
+    },
+  },
+});
 const list = ref([]);
 const unread = ref(0);
 
@@ -30,14 +50,14 @@ async function open(n) {
   }
 }
 async function readAll() {
-  if (!auth.isLoggedIn) return toast('Please sign in');
-  try { await api.notifyRead(); await load(); toast('All marked read'); } catch (e) { toast(e.message); }
+  if (!auth.isLoggedIn) return toast(t('pleaseSignIn'));
+  try { await api.notifyRead(); await load(); toast(t('allMarkedRead')); } catch (e) { toast(e.message); }
 }
 </script>
 
 <template>
   <div class="notis">
-    <NavBar title="Notifications" :right="unread ? 'Read all' : ''" @right="readAll" />
+    <NavBar :title="t('navTitle')" :right="unread ? t('readAll') : ''" @right="readAll" />
     <div class="list">
       <div v-for="n in list" :key="n.id" class="item" :class="{ unread: !n.read }" @click="open(n)">
         <div class="ic"><img :src="ICON[n.type] || ICON.system" alt="" /><i v-if="!n.read" class="dot"></i></div>
@@ -46,7 +66,7 @@ async function readAll() {
           <div class="text">{{ n.body }}</div>
         </div>
       </div>
-      <div v-if="!list.length" class="empty"><img src="/static/image/nodata.png" alt="" /><p>No notifications</p></div>
+      <div v-if="!list.length" class="empty"><img src="/static/image/nodata.png" alt="" /><p>{{ t('empty') }}</p></div>
     </div>
   </div>
 </template>

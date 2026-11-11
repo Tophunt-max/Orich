@@ -1,12 +1,33 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useToast } from '../components/useToast';
 
 const router = useRouter();
 const { toast } = useToast();
+const { t } = useI18n({ useScope: 'local', messages: {
+  en: {
+    navTitle: 'Addresses',
+    empty: 'No address yet',
+    defaultAddr: 'Default address',
+    delete: 'Delete',
+    addNew: '+ Add new address',
+    removed: 'Removed',
+    defaultUpdated: 'Default updated',
+  },
+  hi: {
+    navTitle: 'पते',
+    empty: 'अभी कोई पता नहीं',
+    defaultAddr: 'डिफ़ॉल्ट पता',
+    delete: 'हटाएँ',
+    addNew: '+ नया पता जोड़ें',
+    removed: 'हटा दिया गया',
+    defaultUpdated: 'डिफ़ॉल्ट अपडेट हुआ',
+  },
+} });
 const list = ref([]);
 
 async function load() {
@@ -15,23 +36,23 @@ async function load() {
 onMounted(load);
 
 async function del(id) {
-  try { await api.addressDel(id); toast('Removed'); load(); } catch (e) { toast(e.message); }
+  try { await api.addressDel(id); toast(t('removed')); load(); } catch (e) { toast(e.message); }
 }
 
 async function setDefault(a) {
   if (!a || a.isDefault) return;
-  try { await api.addressSetDefault(a.id); toast('Default updated'); load(); } catch (e) { toast(e.message); }
+  try { await api.addressSetDefault(a.id); toast(t('defaultUpdated')); load(); } catch (e) { toast(e.message); }
 }
 </script>
 
 <!-- Faithful rebuild of the real pages/address/address (.address) + scoped CSS. -->
 <template>
   <div class="address">
-    <NavBar title="Addresses" />
+    <NavBar :title="t('navTitle')" />
 
     <div v-if="!list.length" class="empty2">
       <img src="/static/image/nodata.png" alt="" />
-      <div>No address yet</div>
+      <div>{{ t('empty') }}</div>
     </div>
 
     <div v-for="a in list" :key="a.id" class="content">
@@ -46,13 +67,13 @@ async function setDefault(a) {
       <div class="bottom">
         <div class="bottom-radio" :class="{ 'bottom-select': a.isDefault }" @click="setDefault(a)">
           <div class="bottom-circle"></div>
-          <span>Default address</span>
+          <span>{{ t('defaultAddr') }}</span>
         </div>
-        <span class="delete" @click="del(a.id)">Delete</span>
+        <span class="delete" @click="del(a.id)">{{ t('delete') }}</span>
       </div>
     </div>
 
-    <button class="addbtn" @click="router.push('/address/add')">+ Add new address</button>
+    <button class="addbtn" @click="router.push('/address/add')">{{ t('addNew') }}</button>
   </div>
 </template>
 
