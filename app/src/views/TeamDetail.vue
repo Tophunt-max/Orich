@@ -1,32 +1,37 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 
 const route = useRoute();
+const router = useRouter();
 const level = computed(() => (route.params.level === 'indirect' ? 'indirect' : 'direct'));
 const title = computed(() => (level.value === 'indirect' ? 'Indirect Members' : 'Direct Members'));
 const wantedLevel = computed(() => (level.value === 'indirect' ? 2 : 1));
 
-const team = ref(null);
-const members = ref([]);
+const teamData = ref(null);
+const inviteData = ref(null);
 const avatarFallback = '/static/image/home/icon_multiuser.png';
 
 const summary = computed(() =>
-  team.value?.levels?.find((l) => l.level === wantedLevel.value) || { members: 0, commission: '0.00' });
+  teamData.value?.levels?.find((l) => l.level === wantedLevel.value) || { members: 0, commission: '0.00' });
+
+// Derived reactively so the Direct/Indirect tab updates without refetching.
+const members = computed(() => {
+  const list = (teamData.value?.list || []).filter((m) => !m.level || m.level === wantedLevel.value);
+  if (list.length) return list;
+  return inviteData.value?.list || [];
+});
 
 onMounted(async () => {
-  try {
-    team.value = await api.team();
-    const list = (team.value?.list || []).filter((m) => !m.level || m.level === wantedLevel.value);
-    if (list.length) { members.value = list; return; }
-  } catch { /* ignore */ }
-  try {
-    const inv = await api.invite();
-    members.value = inv?.list || [];
-  } catch { /* ignore */ }
+  try { teamData.value = await api.team(); } catch { /* ignore */ }
+  try { inviteData.value = await api.invite(); } catch { /* ignore */ }
 });
+
+function switchLevel(l) {
+  if (l !== level.value) router.push('/team/' + l);
+}
 </script>
 
 <!-- Faithful rebuild of the real pages/account/teamDetail layout + scoped CSS. -->
@@ -54,6 +59,15 @@ onMounted(async () => {
     </div>
 
     <div class="detail_tab">
+      <div class="detail_list_tab">
+        <div class="detail_list_tab_item" @click="switchLevel('direct')">
+          <div class="detail_list_tab_item_title" :class="{ item_active: level === 'direct' }">Direct</div>
+        </div>
+        <div class="detail_list_tab_item" @click="switchLevel('indirect')">
+          <div class="detail_list_tab_item_title" :class="{ item_active: level === 'indirect' }">Indirect</div>
+        </div>
+      </div>
+
       <div class="detail_list_content">
         <template v-if="members.length">
           <div v-for="(m, i) in members" :key="i" class="detail_list_content_item">
@@ -62,6 +76,7 @@ onMounted(async () => {
                 <img :src="m.avatar || avatarFallback" alt="" />
               </div>
               <div class="detail_list_content_item_name">{{ m.nickname || m.name || 'Member' }}</div>
+              <div v-if="m.vip" class="detail_list_content_item_vipimg">VIP</div>
               <div class="detail_list_content_item_team">
                 Team<span>{{ m.teamCount ?? 0 }}</span>
               </div>
@@ -96,12 +111,17 @@ onMounted(async () => {
 .detail .detail_count .detail_count_money .detail_count_money_item .money { font-size: 18px; font-family: Roboto, Roboto-Bold; font-weight: 700; color: #fff; }
 .detail .detail_count .detail_count_money .detail_count_money_item .title { margin-top: 8px; font-size: 13px; font-family: Roboto, Roboto-Medium; font-weight: 500; color: #fff; }
 .detail .detail_tab { margin-top: 12px; }
+.detail .detail_tab .detail_list_tab { background-color: #fff; height: 49px; display: flex; align-items: center; justify-content: space-around; font-family: Roboto, Roboto-Medium; font-weight: 500; letter-spacing: 0px; }
+.detail .detail_tab .detail_list_tab .detail_list_tab_item { display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; }
+.detail .detail_tab .detail_list_tab .detail_list_tab_item .detail_list_tab_item_title { color: #b9b9b9; }
+.detail .detail_tab .detail_list_tab .detail_list_tab_item .item_active { color: #17273a; }
 .detail .detail_tab .detail_list_content { margin-top: 4px; background-color: #fff; }
 .detail .detail_tab .detail_list_content .detail_list_content_item { padding: 15px 0; margin-right: 15px; margin-left: 15px; border-bottom: 1px solid #f9f9f9; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_user { display: flex; align-items: center; justify-content: flex-start; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_user .detail_list_content_item_avatar { width: 32px; height: 32px; border-radius: 50%; overflow: hidden; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_user .detail_list_content_item_avatar img { width: 100%; height: 100%; object-fit: cover; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_user .detail_list_content_item_name { margin-left: 7px; font-size: 14px; font-family: Roboto, Roboto-Medium; font-weight: 500; color: #17273a; letter-spacing: 0px; max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_user .detail_list_content_item_vipimg { margin-left: 8px; padding: 2px 8px; border-radius: 4px; background: linear-gradient(111deg, #ffe44b, #fea326); color: #9c4d08; font-size: 11px; font-weight: 700; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_user .detail_list_content_item_team { margin-left: 19px; font-size: 14px; font-family: Roboto, Roboto-Regular; font-weight: 400; color: #17273a; letter-spacing: 0px; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_user .detail_list_content_item_team span { color: #ff5c5c; margin: 0 3px; }
 .detail .detail_tab .detail_list_content .detail_list_content_item .detail_list_content_item_count { margin-top: 16px; padding-left: 13px; padding-right: 16px; display: flex; align-items: center; justify-content: space-between; }

@@ -11,6 +11,11 @@ const orderNo = computed(() => route.query.order || route.query.id || '');
 const amount = computed(() => route.query.amount || '');
 const time = computed(() => route.query.time || new Date().toLocaleString());
 
+// Finance purchases pass type=finance plus start/maturity dates to show the term card.
+const isFinance = computed(() => route.query.type === 'finance' || !!route.query.start || !!route.query.end);
+const startTime = computed(() => route.query.start || '');
+const endTime = computed(() => route.query.end || '');
+
 const steps = [
   'Add our official WhatsApp number to receive your order updates.',
   'Send your order number in the chat to confirm your entry.',
@@ -24,6 +29,25 @@ const steps = [
     <div class="top">
       <img class="top-img" src="/static/image/bask/img_Successful.png" alt="" />
       <div class="top-tips">Payment successful! Your order has been placed.</div>
+
+      <div v-if="isFinance" class="finance-tips">
+        <div class="finance-tips-dot">
+          <span class="icon"></span>
+          <span class="line"></span>
+          <span class="icon"></span>
+        </div>
+        <div class="finance-tips-main">
+          <div class="start">
+            <div>Start</div>
+            <div class="time"><span>{{ startTime || '—' }}</span></div>
+          </div>
+          <div class="end">
+            <div>Maturity</div>
+            <div class="time"><span>{{ endTime || '—' }}</span></div>
+          </div>
+        </div>
+      </div>
+
       <div class="top-btn">
         <button class="big-btn" style="height:39px;margin:0;width:143px" @click="router.replace('/home')">Home</button>
         <button class="big-btn" style="height:39px;margin:0;width:143px;background:#fff;color:#ee5016;border:1px solid #ee5016" @click="router.replace('/account')">My orders</button>
@@ -66,6 +90,14 @@ const steps = [
 .top { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0 5px; background-color: #fff; margin-bottom: 12px; }
 .top .top-img { height: 190px; }
 .top .top-tips { width: 265px; margin-top: 0px; text-align: center; font-size: 14px; font-family: Roboto, Roboto-Regular; color: #ee5016; }
+.top .finance-tips { margin-top: 15px; display: flex; align-items: center; justify-content: center; flex-direction: column; width: 332px; height: 113px; background: #fff; border-radius: 8px; box-shadow: 0 0 11px 0 rgba(0,0,0,.05); }
+.top .finance-tips .finance-tips-dot { display: flex; align-items: center; justify-content: center; }
+.top .finance-tips .finance-tips-dot .icon { width: 12px; height: 12px; background: #ee5016; border-radius: 50%; }
+.top .finance-tips .finance-tips-dot .line { width: 150px; border-top: 1px dashed #ee5016; opacity: .3; margin: 0 4px; }
+.top .finance-tips .finance-tips-main { margin-top: 10px; display: flex; align-items: flex-start; justify-content: space-between; width: 174px; font-size: 13px; font-weight: 500; text-align: center; color: #b9b9b9; letter-spacing: 0px; }
+.top .finance-tips .finance-tips-main span { color: #ee5016; }
+.top .finance-tips .finance-tips-main .time { margin-top: 5px; }
+.top .finance-tips .finance-tips-main .start { margin-right: 15px; }
 .top .top-btn { display: flex; flex-direction: row; align-items: center; justify-content: space-around; width: 100%; padding: 0 5px; margin-top: 21px; margin-bottom: 18px; }
 .top .top-btn .top-btn-item { width: 143px; height: 39px; }
 
