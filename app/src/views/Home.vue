@@ -319,7 +319,7 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
 .finance-header-item .title { margin-left: 10px; font-size: 16px; font-family: Roboto, Roboto-Bold; font-weight: 700; color: #883c20; }
 .finance-header-item .more { font-size: 13px; color: #ee5016; margin-right: 4px; }
 .finance-header-item .moreimg { width: 10px; height: 10px; object-fit: contain; }
-.finance-main { width: 100%; margin-top: 32px; padding-left: 9px; overflow-x: auto; display: flex; }
+.finance-main { width: 100%; margin-top: 32px; padding-left: 9px; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; flex-wrap: nowrap; }
 .finance-main-card { width: 290px; padding: 16px 10px 9px 11px; display: flex; justify-content: flex-start; background: #fff; border-radius: 5px; box-shadow: 0 0 11px 0 rgba(0,0,0,.05); margin-right: 8px; flex-shrink: 0; }
 .finance-main-card-image { width: 81px; height: 82px; flex-shrink: 0; }
 .finance-main-card-image img { width: 100%; height: 100%; object-fit: contain; }
@@ -338,7 +338,7 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
 .glist .header .header-title { font-size: 18px; font-family: Roboto, Roboto-Bold; font-weight: 700; display: flex; align-items: center; color: #17273a; }
 .glist .header .header-title img { width: 20px; height: 20px; margin-right: 8.5px; object-fit: contain; }
 .glist .header .header-right { flex: 1; text-align: right; color: #b9b9b9; font-size: 14px; }
-.glist .main { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; width: 100%; overflow-x: auto; padding: 0 5px; }
+.glist .main { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: flex-start; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0 5px; }
 .glist .item { background-color: #fff; width: 106px; flex-shrink: 0; margin-right: 12px; border-radius: 5px; padding-top: 17px; }
 .glist .item .item-show { display: flex; align-items: center; justify-content: center; height: 74px; position: relative; }
 .glist .item .item-show .item-show-prize { white-space: nowrap; width: 92px; height: 21px; background: #90b9ff; border-radius: 10px 10px 0 0; line-height: 21px; font-size: 12px; font-weight: 500; color: #fff; text-align: center; position: absolute; bottom: -1px; z-index: 970; }
@@ -359,7 +359,7 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
 .home-list .ltab { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; width: 100%; padding: 11px 13px 5px 13px; background: #fff; }
 .home-list .ltab .ltab-price { font-size: 16px; font-family: Roboto, Roboto-Medium; font-weight: 700; color: #17273a; display: flex; align-items: center; padding-right: 7px; border-right: 1px solid #e0e0e0; white-space: nowrap; }
 .home-list .ltab .ltab-price-arrow { margin-left: 5px; font-size: 10px; color: #ee5016; }
-.home-list .ltab .ltab-tab { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; overflow-x: auto; padding-left: 10px; }
+.home-list .ltab .ltab-tab { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-left: 10px; }
 .home-list .ltab .ltab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: nowrap; margin-right: 25px; }
 .home-list .ltab .ltab-item .ltab-item-text { font-size: 14px; font-family: Roboto, Roboto-Medium; font-weight: 700; color: #b9b9b9; }
 .home-list .ltab .ltab-item-active .ltab-item-text { font-size: 16px; color: #17273a; }
@@ -385,6 +385,8 @@ const inr = (n) => Number(n).toLocaleString('en-IN');
 .home-list .litem .lgoods-btn img { width: 14px; height: 14px; margin-left: 2px; }
 
 /* floating prize */
-.home-prize { width: 78px; height: 69px; position: fixed; right: 7px; bottom: 95px; z-index: 999; }
+/* Anchor the floating entry to the centered 375 frame's right edge (not the browser window),
+   so it stays inside the phone frame on viewports wider than --maxw. */
+.home-prize { width: 78px; height: 69px; position: fixed; right: calc(50% - var(--maxw) / 2 + 7px); bottom: 95px; z-index: 999; }
 .home-prize img { width: 100%; height: 100%; object-fit: contain; }
 </style>
