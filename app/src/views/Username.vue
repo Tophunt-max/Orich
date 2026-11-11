@@ -5,21 +5,47 @@ import NavBar from '../components/NavBar.vue';
 import { api } from '../api/client';
 import { useAuth } from '../stores/auth';
 import { useToast } from '../components/useToast';
+
 const router = useRouter();
 const auth = useAuth();
 const { toast } = useToast();
 const name = ref(auth.user?.nickname || '');
 const busy = ref(false);
+
 async function save() {
+  const v = name.value.trim();
+  if (!v) { toast('Please enter a nickname'); return; }
   busy.value = true;
-  try { const d = await api.accountEdit(name.value); auth.user = d.user; toast('Saved'); router.back(); }
-  catch (e) { toast(e.message); } finally { busy.value = false; }
+  try {
+    const d = await api.accountEdit(v);
+    if (d?.user) auth.user = d.user; else await auth.refresh();
+    toast('Saved');
+    router.back();
+  } catch (e) { toast(e.message); }
+  finally { busy.value = false; }
 }
 </script>
+
+<!-- Faithful rebuild of the real pages/account/username layout + scoped CSS. -->
 <template>
-  <div class="form-page">
-    <NavBar title="Edit Name" />
-    <div class="form-field"><label>Nickname</label><input v-model="name" maxlength="24" /></div>
-    <button class="big-btn" :disabled="busy" @click="save">Save</button>
+  <div class="username">
+    <NavBar title="Change Nickname" />
+    <div class="list">
+      <div class="item">
+        <div class="item-key">Nickname</div>
+        <input class="item-name" v-model="name" maxlength="24" placeholder="Enter your nickname" />
+      </div>
+    </div>
+    <button class="logout" :disabled="busy" @click="save">Save</button>
   </div>
 </template>
+
+<style scoped>
+.username { position: relative; min-height: 100vh; background: #f8f8f8; }
+.username .list { width: 100%; padding: 7px 15px; background: #fff; }
+.username .list .item { display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; }
+.username .list .item .item-key { width: 68px; text-align: left; font-size: 16px; font-family: Roboto, Roboto-Regular; font-weight: 400; color: #444; }
+.username .list .item .item-name { flex: 1; height: 42px; padding: 0 10px; border: 0.5px solid #e0dfdf; border-radius: 3.5px; font-size: 16px; color: #444; }
+.username .logout { position: fixed; bottom: 19px; left: 50%; transform: translateX(-50%); width: 300px; height: 45px; border-radius: 23px; background: #ee5016; color: #fff; font-size: 16px; font-weight: 700; border: none; }
+.username .logout:disabled { opacity: 0.6; }
+</style>
