@@ -20,6 +20,8 @@ function freshState() {
     prizes: seed.prizes.map((p) => ({ ...p })),
     games: seed.games.map((g) => ({ ...g })),
     helpItems: seed.helpItems.map((h) => ({ ...h })),
+    notifications: seed.notifications.map((n) => ({ ...n })),
+    events: [],   // analytics events (AppsFlyer/Firebase parity)
     rechargeOptions: [...seed.rechargeOptions],
     settings: {
       name: 'ORich',

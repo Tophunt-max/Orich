@@ -62,6 +62,7 @@ async function join() {
   busy.value = true;
   try {
     const data = await api.join(item.value.id, shares.value);
+    api.track('join_group_buy', { id: item.value.id, shares: shares.value });
     toast(t('common.join') + ' ✓ · ₹' + data.balance);
     load(await api.product(route.params.id));
     auth.refresh();

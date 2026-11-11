@@ -294,6 +294,28 @@ const userRoutes = {
   '/index/itemshare': (b) => ok({ link: 'https://orich.example/order/' + (b.id || ''), poster: store.img('goods/ing_Successfulpurchase.png') }),
   '/index/userinvitetop': () => ok({ list: inviteTop() }),
 
+  // ---------- APK parity: push notifications / OTA update / analytics ----------
+  '/index/notifications': (b, ctx) => {
+    const s = store.get(); const u = ctx && ctx.user && ctx.user.user;
+    const read = new Set((u && u.readNotifs) || []);
+    const list = s.notifications.map((n) => ({ ...n, read: read.has(n.id) }));
+    return ok({ list, unread: list.filter((n) => !n.read).length });
+  },
+  '/index/notifyread': (b, ctx) => {
+    const u = ctx.user.user; u.readNotifs = u.readNotifs || [];
+    if (b.id) { if (!u.readNotifs.includes(Number(b.id))) u.readNotifs.push(Number(b.id)); }
+    else { u.readNotifs = store.get().notifications.map((n) => n.id); }
+    store.save(); return ok({}, 'Marked read');
+  },
+  '/index/checkupdate': () => { const u = seed.appUpdate; return ok({ ...u, hasUpdate: u.latest !== u.version }); },
+  '/index/track': (b, ctx) => {
+    const s = store.get(); s.events = s.events || [];
+    const uid = ctx && ctx.user && ctx.user.user ? ctx.user.user.id : null;
+    s.events.push({ name: String(b.name || 'event'), props: b.props || {}, userId: uid, ts: Date.now() });
+    if (s.events.length > 2000) s.events = s.events.slice(-2000);
+    store.save(); return ok({ logged: true });
+  },
+
   // ---------- APK parity: authed records / edits / actions ----------
   '/index/userrebatelist': (b, ctx) => ok({ list: rebateList(ctx.user.user) }),
   '/index/userconsume': (b, ctx) => ok({ list: store.get().orders.filter((o) => o.userId === ctx.user.user.id && o.type !== 'recharge').reverse() }),
@@ -430,7 +452,7 @@ const USER_AUTH = new Set(['/index/useraccount', '/index/userbalance', '/index/a
   // APK-parity authed endpoints
   '/index/userrebatelist', '/index/userconsume', '/index/useritem', '/index/getUserAfs', '/index/editAfStatus',
   '/index/itemdetail', '/index/itemedit', '/index/itemdefaultaddr', '/index/addorderpay', '/index/joinactivity',
-  '/index/bankedit', '/index/addressedit', '/index/addresschangedefault']);
+  '/index/bankedit', '/index/addressedit', '/index/addresschangedefault', '/index/notifyread']);
 
 // ----------------------------- admin API -----------------------------
 const COLLECTIONS = { products: 'product', winners: 'winner', finances: 'finance', tasks: null, vipTiers: 'vip', luckyDraws: 'lucky' };
@@ -457,6 +479,8 @@ const adminRoutes = {
       withdraw: sum('withdraw').toFixed(2),
       pendingWithdraw: s.orders.filter((o) => o.type === 'withdraw' && o.status === 'pending').length,
       pendingRecharge: s.orders.filter((o) => o.type === 'recharge' && o.status === 'pending').length,
+      notifications: (s.notifications || []).length,
+      events: (s.events || []).length,
       settings: s.settings,
     });
   },
@@ -522,6 +546,17 @@ const adminRoutes = {
     return ok({ order: o }, 'Order updated');
   },
   'POST /orders/delete': (b) => { const s = store.get(); s.orders = s.orders.filter((x) => x.id !== Number(b.id)); store.save(); return ok({}, 'Order deleted'); },
+  'POST /notify/send': (b) => {
+    const s = store.get();
+    const n = { id: store.nextId('notification'), type: b.type || 'system', title: b.title || 'Notice', body: b.body || '', date: new Date().toISOString().slice(0, 16).replace('T', ' ') };
+    s.notifications.unshift(n); store.save();
+    return ok({ notification: n }, 'Notification sent');
+  },
+  'GET /events': () => {
+    const s = store.get(); const ev = s.events || [];
+    const counts = {}; ev.forEach((e) => { counts[e.name] = (counts[e.name] || 0) + 1; });
+    return ok({ total: ev.length, counts, recent: ev.slice(-30).reverse() });
+  },
   'GET /orders': (b) => {
     let list = store.get().orders;
     if (b.type) list = list.filter((o) => o.type === b.type);

@@ -157,6 +157,16 @@ const games = [
   { id: 2, name: 'Lucky Dice', cover: '/static/products/cash.svg', ticket: 5 },
 ];
 
+// Push-style in-app notifications (GeTui/message parity). `read` is tracked per-user.
+const notifications = [
+  { id: 1, type: 'winner', title: 'Lucky draw result', body: 'rahul*** just won an iPhone 14 128GB. The next draw closes soon — join now!', date: '2026-11-10 20:14' },
+  { id: 2, type: 'promo', title: 'VIP Gold -20% today', body: 'Activate Gold VIP today and get 20% off plus a higher daily bonus.', date: '2026-11-10 09:00' },
+  { id: 3, type: 'order', title: 'Order update', body: 'Your group-buy entry is confirmed. We will notify you when the draw happens.', date: '2026-11-09 18:30' },
+  { id: 4, type: 'system', title: 'Welcome to ORich', body: 'Recharge your wallet, join 1₹ group-buys and win big. Invite friends to earn commission.', date: '2026-11-08 12:00' },
+];
+// App version / OTA update info (DCloud OTA parity).
+const appUpdate = { version: '2.1.4', latest: '2.1.4', url: 'https://orich.in/', notes: 'Bug fixes and performance improvements.' };
+
 // A single demo account keyed by token.
 function freshUser() {
   return {
@@ -173,4 +183,4 @@ function freshUser() {
   };
 }
 
-module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, vipConfig, luckyDraws, prizes, games, categories, helpItems, inviteRules, payChannels, withdrawConfig, freshUser, img };
+module.exports = { products, winners, finances, rechargeOptions, tasks, vipTiers, vipConfig, luckyDraws, prizes, games, categories, helpItems, inviteRules, payChannels, withdrawConfig, notifications, appUpdate, freshUser, img };

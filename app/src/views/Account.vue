@@ -21,6 +21,7 @@ const menu = [
   { icon: img + 'icon_myteam.png', label: 'account.team', to: '/team' },
   { icon: img + 'icon_Fundingrecords.png', label: 'account.funding', to: '/funding' },
   { icon: img + 'icon_Invitationrecords.png', label: 'account.invite', to: '/invitation' },
+  { icon: img + 'icon_Waiting.png', label: 'account.notifications', to: '/notifications' },
   { icon: img + 'icon_Myshare.png', label: 'winner.mine', to: '/myshare' },
   { icon: img + 'icon_Earnrewards.png', label: 'vip.title', to: '/vip' },
   { icon: img + 'icon_AboutUs.png', label: 'account.about', to: '/aboutus' },

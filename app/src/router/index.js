@@ -30,6 +30,7 @@ const routes = [
   { path: '/vip', component: () => import('../views/Vip.vue'), meta: { auth: true, tab: true } },
   { path: '/invitation', component: () => import('../views/Invitation.vue'), meta: { auth: true } },
   { path: '/myshare', component: () => import('../views/MyShare.vue'), meta: { auth: true } },
+  { path: '/notifications', component: () => import('../views/Notifications.vue') },
   { path: '/prize', component: () => import('../views/Prize.vue') },
   { path: '/game', component: () => import('../views/Game.vue'), meta: { auth: true } },
   { path: '/address', component: () => import('../views/Address.vue'), meta: { auth: true } },

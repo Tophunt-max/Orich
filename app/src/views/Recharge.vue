@@ -36,6 +36,7 @@ async function pay() {
   busy.value = true;
   try {
     const data = await api.recharge(value);
+    api.track('recharge', { amount: value });
     auth.user = { ...auth.user, balance: data.balance };
     toast(t('recharge.success') + ' · ₹' + data.balance);
     amount.value = 0; custom.value = '';
