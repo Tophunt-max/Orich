@@ -1,0 +1,12 @@
+{
+  "name": "orich-clone-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mock REST API for the ORich clone (dependency-free Node http server).",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,43 @@
+import { createI18n } from 'vue-i18n';
+
+// English + Hindi, like the original ORich app (which shipped en/hi/zh).
+const en = {
+  app: { name: 'ORich' },
+  tab: { home: 'Home', winner: 'Winner', account: 'Account' },
+  common: { join: 'Join', recharge: 'Recharge', confirm: 'Confirm', cancel: 'Cancel', back: 'Back', all: 'All', loading: 'Loading…', empty: 'Nothing here yet', balance: 'Balance', submit: 'Submit' },
+  home: { notice: 'Notice', hot: 'Hot Picks', groupBuy: '1₹ Group Buy', latestWinners: 'Latest Winners', viewAll: 'View all', joined: 'joined', remaining: 'left' },
+  product: { marketValue: 'Market value', perShare: 'Per share', progress: 'Progress', shares: 'Shares', total: 'Total', joinNow: 'Join now', ongoing: 'Ongoing', drawing: 'Drawing', done: 'Completed' },
+  login: { title: 'Sign in', phone: 'Phone number', code: 'Verification code', send: 'Send code', invite: 'Invite code (optional)', action: 'Sign in / Register', terms: 'By continuing you agree to the Terms & Privacy Policy' },
+  account: { wallet: 'Wallet', withdraw: 'Withdraw', team: 'My Team', funding: 'Fund Records', finance: 'Finance', orders: 'My Orders', help: 'Help & FAQ', settings: 'Settings', about: 'About Us', service: 'Customer Service', invite: 'Invite Friends', signOut: 'Sign out', frozen: 'Frozen' },
+  recharge: { title: 'Recharge', choose: 'Choose amount', custom: 'Custom amount', pay: 'Pay now', success: 'Recharge successful' },
+  winner: { title: 'Winners', mine: 'My Wins', code: 'Lucky code', shares: 'shares' },
+  finance: { title: 'Finance', rate: 'Daily rate', days: 'Term', min: 'Min', invest: 'Invest', amount: 'Amount', confirm: 'Confirm investment' },
+  invite: { title: 'Invite Friends', yourCode: 'Your invite code', copy: 'Copy', share: 'Share', tip: 'Invite friends and earn commission when they join.' },
+  order: { title: 'My Orders', amount: 'Amount', status: 'Status', date: 'Date' },
+  task: { title: 'Daily Tasks', claim: 'Claim', claimed: 'Claimed' },
+  vip: { title: 'VIP Membership', buy: 'Activate', active: 'You are a {name} VIP', daily: 'Daily bonus ₹{n}', rebate: '{n}% referral rebate' },
+};
+
+const hi = {
+  app: { name: 'ORich' },
+  tab: { home: 'होम', winner: 'विजेता', account: 'खाता' },
+  common: { join: 'शामिल हों', recharge: 'रिचार्ज', confirm: 'पुष्टि करें', cancel: 'रद्द करें', back: 'वापस', all: 'सभी', loading: 'लोड हो रहा है…', empty: 'अभी यहाँ कुछ नहीं है', balance: 'बैलेंस', submit: 'सबमिट' },
+  home: { notice: 'सूचना', hot: 'हॉट पिक्स', groupBuy: '₹1 ग्रुप बाय', latestWinners: 'नए विजेता', viewAll: 'सभी देखें', joined: 'शामिल', remaining: 'बाकी' },
+  product: { marketValue: 'बाज़ार मूल्य', perShare: 'प्रति शेयर', progress: 'प्रगति', shares: 'शेयर', total: 'कुल', joinNow: 'अभी शामिल हों', ongoing: 'जारी', drawing: 'ड्रॉ', done: 'पूर्ण' },
+  login: { title: 'साइन इन', phone: 'फ़ोन नंबर', code: 'सत्यापन कोड', send: 'कोड भेजें', invite: 'इनवाइट कोड (वैकल्पिक)', action: 'साइन इन / रजिस्टर', terms: 'जारी रखने पर आप नियम व गोपनीयता नीति से सहमत हैं' },
+  account: { wallet: 'वॉलेट', withdraw: 'निकासी', team: 'मेरी टीम', funding: 'फंड रिकॉर्ड', finance: 'फाइनेंस', orders: 'मेरे ऑर्डर', help: 'मदद व सवाल', settings: 'सेटिंग्स', about: 'हमारे बारे में', service: 'कस्टमर सेवा', invite: 'दोस्तों को बुलाएँ', signOut: 'साइन आउट', frozen: 'फ्रोज़न' },
+  recharge: { title: 'रिचार्ज', choose: 'राशि चुनें', custom: 'कस्टम राशि', pay: 'अभी भुगतान करें', success: 'रिचार्ज सफल' },
+  winner: { title: 'विजेता', mine: 'मेरी जीत', code: 'लकी कोड', shares: 'शेयर' },
+  finance: { title: 'फाइनेंस', rate: 'दैनिक दर', days: 'अवधि', min: 'न्यूनतम', invest: 'निवेश', amount: 'राशि', confirm: 'निवेश की पुष्टि करें' },
+  invite: { title: 'दोस्तों को बुलाएँ', yourCode: 'आपका इनवाइट कोड', copy: 'कॉपी', share: 'शेयर', tip: 'दोस्तों को बुलाएँ और उनके शामिल होने पर कमीशन कमाएँ।' },
+  order: { title: 'मेरे ऑर्डर', amount: 'राशि', status: 'स्थिति', date: 'तारीख' },
+  task: { title: 'रोज़ के टास्क', claim: 'क्लेम', claimed: 'क्लेम किया' },
+  vip: { title: 'VIP मेंबरशिप', buy: 'एक्टिवेट करें', active: 'आप {name} VIP हैं', daily: 'रोज़ का बोनस ₹{n}', rebate: '{n}% रेफरल रिबेट' },
+};
+
+export default createI18n({
+  legacy: false,
+  locale: localStorage.getItem('orich_lang') || 'en',
+  fallbackLocale: 'en',
+  messages: { en, hi },
+});
