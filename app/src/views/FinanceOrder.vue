@@ -17,8 +17,6 @@ const isActive = (o) => String(o.status || '').toLowerCase() === 'active';
 const shown = computed(() => list.value.filter((o) => (tab.value === 'active' ? isActive(o) : !isActive(o))));
 const total = computed(() => list.value.reduce((s, o) => s + Number(o.amount || 0), 0).toFixed(2));
 const count = computed(() => list.value.length);
-// Progress not returned by backend; derive a cosmetic value (active orders mid-term, else full).
-const progOf = (o) => (isActive(o) ? 45 : 100);
 </script>
 
 <!-- Faithful rebuild of the real pages/finance/order (.order) + scoped CSS. -->
@@ -73,8 +71,12 @@ const progOf = (o) => (isActive(o) ? 45 : 100);
           </div>
           <div class="order_list_card_item_pro">
             <div class="order_list_card_item_pro_title">Progress</div>
-            <div class="order_list_card_item_pro_gress"><span :style="{ width: progOf(o) + '%' }"></span></div>
-            <div class="order_list_card_item_pro_num">{{ progOf(o) }}%</div>
+            <div class="order_list_card_item_pro_gress"><span :style="{ width: (o.progress || 0) + '%' }"></span></div>
+            <div class="order_list_card_item_pro_num">{{ o.progress || 0 }}%</div>
+          </div>
+          <div class="order_list_card_item_pro mr_top36">
+            <div class="order_list_card_item_pro_title">Earned</div>
+            <div class="order_list_card_item_pro_time">₹{{ o.earned ?? '0.00' }}<template v-if="o.daysLeft != null"> · {{ o.daysLeft }} days left</template></div>
           </div>
           <div class="order_list_card_item_pro mr_top36">
             <div class="order_list_card_item_pro_title">Date</div>
