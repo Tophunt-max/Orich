@@ -66,31 +66,67 @@ To lock it down, replace `*` with your Pages domain in `server/index.js`
 
 ---
 
-## Option B: Everything on Cloudflare (Worker + KV) — READY
+## Option B: Everything on Cloudflare — READY
 
-This is **already implemented** in [`worker/`](worker/). One Cloudflare Worker serves
-the API **and** the static app + admin, with state in a single **KV** document. It
-reuses the exact same logic as the Node server (`server/core.js`) — only the store
-(fs → KV) and transport (http → `fetch`) differ.
+Three Cloudflare pieces, all included and configured:
 
+| Piece | Cloudflare product | Config |
+|-------|--------------------|--------|
+| User app | **Pages** | `app/wrangler.toml` |
+| Admin panel | **Pages** | `admin/wrangler.toml` |
+| API (+ KV state) | **Worker** | `worker/wrangler.toml` |
+
+The Worker reuses the exact same logic as the Node server (`server/core.js`) — only
+the store (fs → KV) and transport (http → `fetch`) differ.
+
+### 1. Deploy the API Worker
 ```bash
 cd worker
 npm install
 npx wrangler login
-npx wrangler kv namespace create ORICH_KV   # paste the id into wrangler.toml
-npm run deploy                              # builds app+admin → ./public, then deploys
+npx wrangler kv namespace create ORICH_KV   # paste the id into worker/wrangler.toml
+npm run deploy                              # API-only deploy
+```
+Note the URL, e.g. `https://orich.<you>.workers.dev`. Harden:
+```bash
+npx wrangler secret put ORICH_HIDE_OTP   # value: 1
+npx wrangler secret put ADMIN_USER
+npx wrangler secret put ADMIN_PASS
 ```
 
-Result (one origin):
-- `/`            → user app
-- `/admin`       → admin panel
-- `/api/*`       → user API
-- `/admin/api/*` → admin API
+### 2. Deploy the user app to Pages
+```bash
+cd app
+VITE_API_BASE=https://orich.<you>.workers.dev/api npm run build
+npx wrangler pages deploy dist            # project: orich-app
+```
+(Or connect the repo in the Pages dashboard: root dir `app`, build `npm run build`,
+output `dist`, env var `VITE_API_BASE=https://orich.<you>.workers.dev/api`.)
 
-Hardening: `npx wrangler secret put ORICH_HIDE_OTP` (=`1`), `ADMIN_USER`, `ADMIN_PASS`.
+### 3. Deploy the admin to Pages
+```bash
+cd admin
+VITE_ADMIN_API=https://orich.<you>.workers.dev/admin/api npm run build
+npx wrangler pages deploy dist            # project: orich-admin
+```
+(Dashboard: root dir `admin`, build `npm run build`, output `dist`,
+env var `VITE_ADMIN_API=https://orich.<you>.workers.dev/admin/api`.)
 
-See [`worker/README.md`](worker/README.md) for details and limits (KV write rate,
-uploads → R2, or switch the store to a Durable Object / D1 for heavy concurrency).
+### CORS
+The Worker already sends `Access-Control-Allow-Origin: *` and allows the
+`Content-Type, token, Authorization, lang` headers, so the Pages front-ends call the
+Worker cross-origin without extra setup. To lock it down, replace `*` in
+`server/core.js`-based responses… (the Worker sets CORS in `worker/src/index.js` →
+`CORS` object) with your Pages domains.
+
+### Prefer a single Worker instead of Pages?
+The Worker can also serve the app + admin itself (one origin, no CORS): populate its
+assets and enable the binding — see [`worker/README.md`](worker/README.md)
+(`npm run deploy:allinone`, and uncomment `[assets]` in `worker/wrangler.toml`).
+
+**Limits:** KV is eventually-consistent with ~1 write/sec per key — fine for a
+demo/low traffic. For heavy concurrency switch the store to a **Durable Object** or
+**D1** (same `core.js`). Uploads are echoed as data URLs; bind **R2** for real files.
 
 ---
 
